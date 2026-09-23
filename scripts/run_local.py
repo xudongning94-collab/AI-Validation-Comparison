@@ -16,8 +16,10 @@ def main() -> int:
     parser.add_argument("files", nargs="+", help="DOCX/PDF 文件")
     parser.add_argument("-o", "--output", default="output", help="输出目录")
     args = parser.parse_args()
+
     out_dir = Path(args.output)
     out_dir.mkdir(parents=True, exist_ok=True)
+
     for raw in args.files:
         source = Path(raw)
         doc = parse_document(source)
