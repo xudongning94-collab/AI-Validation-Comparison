@@ -1,0 +1,23 @@
+text_similarity:
+  # 业务口径阈值：>= high 为高度重复；medium~high 为中度相似
+  high: 0.85
+  medium: 0.60
+  # Alpha 比对参数。标题与过短段落不计入正文重复率。
+  min_chars: 20
+  max_chars: 6000
+  ngram_min: 2
+  ngram_max: 4
+  recall_ngram: 2
+  max_candidates_per_paragraph: 30
+  min_shared_recall_tokens: 2
+  top_matches_per_paragraph: 3
+  apply_interference: true
+  interference_downweight_factor: 0.70
+image_similarity:
+  phash_exact_max_distance: 5
+  phash_high_max_distance: 15
+  color_similarity_min: 0.55
+  aspect_ratio_delta_max: 0.25
+  min_side_px: 8
+interference:
+  template_similarity: 0.90

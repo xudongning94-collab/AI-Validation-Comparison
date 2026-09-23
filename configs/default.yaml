@@ -1,0 +1,10 @@
+project:
+  schema_version: "1.0.0"
+parser:
+  max_file_size_mb: 50
+  supported_extensions: [".docx", ".pdf"]
+  include_empty_paragraphs: false
+  extract_images: true
+  extract_tables: true
+  extract_headers_footers: true
+  pdf_min_line_chars: 2

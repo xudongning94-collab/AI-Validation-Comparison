@@ -1,0 +1,6 @@
+# D8 使用，本阶段先冻结配置接口
+weights:
+  text_similarity: 0.40
+  image_similarity: 0.20
+  ai_likelihood: 0.15
+  format_similarity: 0.25
