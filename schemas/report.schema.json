@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CompareReport",
+  "type": "object",
+  "required": ["report_id", "schema_version", "documents", "findings", "scores"],
+  "properties": {
+    "report_id": {"type": "string"},
+    "schema_version": {"type": "string"},
+    "documents": {"type": "array"},
+    "findings": {"type": "array"},
+    "scores": {"type": "object"},
+    "risk_level": {"type": ["string", "null"]},
+    "summary": {"type": ["string", "null"]}
+  }
+}

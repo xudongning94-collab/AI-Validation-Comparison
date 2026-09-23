@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/document.schema.json",
+  "title": "DocumentIR",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "document_id",
+    "filename",
+    "file_type",
+    "sha256",
+    "paragraphs",
+    "tables",
+    "images",
+    "format_meta"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "document_id": {"type": "string"},
+    "filename": {"type": "string"},
+    "file_type": {"enum": ["docx","pdf"]},
+    "file_size_bytes": {"type": "integer","minimum": 0},
+    "sha256": {"type": "string","minLength": 64,"maxLength": 64},
+    "page_count": {"type": ["integer","null"],"minimum": 1},
+    "paragraphs": {"type": "array","items": {"$ref": "#/$defs/paragraph"}},
+    "tables": {"type": "array","items": {"$ref": "#/$defs/table"}},
+    "images": {"type": "array","items": {"$ref": "#/$defs/image"}},
+    "format_meta": {"type": "object"},
+    "warnings": {"type": "array","items": {"type": "string"}},
+    "metadata": {"type": "object"}
+  },
+  "$defs": {
+    "locator": {"type": ["object","null"],"properties": {"kind": {"type": "string"},"index": {"type": ["integer","null"]},"page": {"type": ["integer","null"]},"paragraph_index": {"type": ["integer","null"]},"table_index": {"type": ["integer","null"]},"row_index": {"type": ["integer","null"]},"cell_index": {"type": ["integer","null"]},"part": {"type": ["string","null"]}},"required": ["kind"]},
+    "paragraph": {"type": "object","required": ["id","text","order","source_locator"],"properties": {"id": {"type": "string"},"text": {"type": "string"},"order": {"type": "integer"},"style_name": {"type": ["string","null"]},"heading_level": {"type": ["integer","null"]},"alignment": {"type": ["string","null"]},"line_spacing": {},"runs": {"type": "array"},"source_locator": {"$ref": "#/$defs/locator"}}},
+    "table": {"type": "object","required": ["id","rows","order"],"properties": {"id": {"type": "string"},"order": {"type": "integer"},"rows": {"type": "array","items": {"type": "array","items": {"type": "string"}}},"source_locator": {"$ref": "#/$defs/locator"}}},
+    "image": {"type": "object","required": ["id","order"],"properties": {"id": {"type": "string"},"order": {"type": "integer"},"filename": {"type": ["string","null"]},"content_type": {"type": ["string","null"]},"width_px": {"type": ["integer","null"]},"height_px": {"type": ["integer","null"]},"sha256": {"type": ["string","null"]},"source_locator": {"$ref": "#/$defs/locator"},"phash": {"type": ["string","null"]},"mean_rgb": {"type": ["array","null"],"items": {"type": "integer","minimum": 0,"maximum": 255},"minItems": 3,"maxItems": 3}}}
+  }
+}

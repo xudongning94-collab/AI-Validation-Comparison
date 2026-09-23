@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Finding",
+  "type": "object",
+  "required": ["finding_id", "type", "severity", "document_id", "source_locator", "summary"],
+  "properties": {
+    "finding_id": {"type": "string"},
+    "type": {"enum": ["text_similarity", "image_similarity", "format_issue", "ai_likelihood", "interference"]},
+    "severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+    "document_id": {"type": "string"},
+    "peer_document_id": {"type": ["string", "null"]},
+    "source_locator": {"type": "object"},
+    "peer_source_locator": {"type": ["object", "null"]},
+    "score": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "summary": {"type": "string"},
+    "evidence": {"type": "object"},
+    "metadata": {"type": "object"}
+  }
+}
