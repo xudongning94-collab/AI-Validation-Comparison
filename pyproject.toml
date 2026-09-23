@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bid-compare-agent"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.7"
 description = "投标文件多文档比对校验智能体核心工程"
 readme = "README.md"
 requires-python = ">=3.10"

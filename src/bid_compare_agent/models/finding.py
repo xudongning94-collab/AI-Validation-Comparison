@@ -22,3 +22,22 @@ class Finding:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Finding":
+        peer_locator = data.get("peer_source_locator")
+        return cls(
+            finding_id=str(data["finding_id"]),
+            type=str(data["type"]),
+            severity=str(data["severity"]),
+            document_id=str(data["document_id"]),
+            source_locator=SourceLocator(**dict(data["source_locator"])),
+            summary=str(data["summary"]),
+            peer_document_id=(
+                str(data["peer_document_id"]) if data.get("peer_document_id") is not None else None
+            ),
+            peer_source_locator=(SourceLocator(**dict(peer_locator)) if peer_locator is not None else None),
+            score=float(data["score"]) if data.get("score") is not None else None,
+            evidence=dict(data.get("evidence") or {}),
+            metadata=dict(data.get("metadata") or {}),
+        )

@@ -1,0 +1,7 @@
+docx_comments:
+  author: "Bid Compare Agent"
+  initials: "BCA"
+  min_severity: "low"
+  max_comments: 500
+  include_evidence: true
+  max_evidence_chars: 500

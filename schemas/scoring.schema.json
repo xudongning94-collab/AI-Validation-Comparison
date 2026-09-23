@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/scoring.schema.json",
+  "title": "UnifiedScoringResult",
+  "type": "object",
+  "required": ["schema_version", "score_type", "score_id", "documents", "aggregate_score", "aggregate_score_100", "aggregate_risk_level", "metadata"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "score_type": {"const": "unified_risk"},
+    "score_id": {"type": "string"},
+    "documents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["document_id", "filename", "score", "score_100", "risk_level", "dimensions", "finding_ids"],
+        "properties": {
+          "document_id": {"type": "string"},
+          "filename": {"type": "string"},
+          "score": {"type": "number", "minimum": 0, "maximum": 1},
+          "score_100": {"type": "number", "minimum": 0, "maximum": 100},
+          "risk_level": {"enum": ["minimal", "low", "medium", "high", "critical"]},
+          "dimensions": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "object",
+              "required": ["name", "applicable", "raw_score", "configured_weight", "effective_weight", "contribution", "evidence"],
+              "properties": {
+                "name": {"enum": ["text_similarity", "image_similarity", "ai_likelihood", "format_similarity"]},
+                "applicable": {"type": "boolean"},
+                "raw_score": {"type": "number", "minimum": 0, "maximum": 1},
+                "configured_weight": {"type": "number", "minimum": 0},
+                "effective_weight": {"type": "number", "minimum": 0, "maximum": 1},
+                "contribution": {"type": "number", "minimum": 0, "maximum": 1},
+                "evidence": {"type": "object"}
+              }
+            }
+          },
+          "finding_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "aggregate_score": {"type": "number", "minimum": 0, "maximum": 1},
+    "aggregate_score_100": {"type": "number", "minimum": 0, "maximum": 100},
+    "aggregate_risk_level": {"enum": ["minimal", "low", "medium", "high", "critical"]},
+    "metadata": {
+      "type": "object",
+      "required": ["aggregate_strategy", "average_document_score", "missing_dimension_policy", "weights", "risk_thresholds", "ai_likelihood_non_diagnostic"]
+    }
+  }
+}
