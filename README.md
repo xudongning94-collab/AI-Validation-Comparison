@@ -4,7 +4,7 @@
 
 ## 当前版本
 
-**v0.1.0-alpha.7 — D9 Word 反向定位与批注 Alpha**
+**v0.1.0-alpha.8 — D10 HTTP API Alpha**
 
 已完成：
 
@@ -18,6 +18,7 @@
 - D7：AI 疑似度辅助分析 Alpha
 - D8：统一风险评分引擎 Alpha
 - D9：Word 反向定位与原生批注 Alpha
+- D10：HTTP API Alpha
 
 ## 当前核心能力
 
@@ -102,6 +103,14 @@ python scripts/score_documents.py A.docx B.docx -o output/scoring.json
 python scripts/annotate_docx.py A.docx findings.json -o output/A.annotated.docx --report output/annotation.json
 ```
 
+启动本地 HTTP API：
+
+```bash
+python scripts/run_api.py --host 127.0.0.1 --port 8000
+```
+
+交互式接口文档位于 `http://127.0.0.1:8000/docs`。版本化接口覆盖解析、预处理、文本/图片比对、格式检查、AI 辅助分析、统一评分与 DOCX 批注；上传文件默认限制为单文件 50 MB、单次最多 5 份。
+
 ## 目录
 
 ```text
@@ -116,6 +125,7 @@ src/bid_compare_agent/
   check/                 格式检查
   scoring/               统一风险评分
   annotate/              Word 反向定位与原生批注
+  api/                   FastAPI HTTP API 与流水线编排
   models/                中间数据模型
 scripts/                 本地入口
 tests/                   单元/集成测试
@@ -135,12 +145,11 @@ hiagent/                 HiAgent 适配资料
 ## 当前验证状态
 
 - Python 3.13.15 `compileall` 通过
-- `pytest`：**30/30 通过**
+- `pytest`：**39/39 通过**
 - 文本、图片、AI 疑似度、评分和批注结果均通过各自 JSON Schema 校验
 - 批注 DOCX 可重新打开，并包含有效的 OOXML 原生评论部件和定位标记
 
 ## 下一阶段
 
-- D10：HTTP API
 - D11：本地端到端验收 / Benchmark
 - H1–H4：HiAgent / 飞书轻配置接入
