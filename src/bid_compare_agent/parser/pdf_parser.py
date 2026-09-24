@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import fitz
+import pymupdf
 
 from bid_compare_agent.models.document_ir import DocumentIR, FormatMeta, ImageIR, ParagraphIR, SourceLocator
 from bid_compare_agent.utils.io import bytes_sha256, file_sha256
@@ -12,7 +12,7 @@ from bid_compare_agent.utils.text import normalize_text
 
 def parse_pdf(path: str | Path, schema_version: str = "1.0.0") -> DocumentIR:
     path = Path(path)
-    pdf = fitz.open(path)
+    pdf = pymupdf.open(path)
     paragraphs: list[ParagraphIR] = []
     images: list[ImageIR] = []
     warnings: list[str] = []

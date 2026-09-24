@@ -1,6 +1,17 @@
-# D8 使用，本阶段先冻结配置接口
+# D8 统一风险评分。分数越高，表示需要人工复核的风险越高。
 weights:
   text_similarity: 0.40
   image_similarity: 0.20
   ai_likelihood: 0.15
+  # Alpha 阶段使用格式异常风险；后续扩展为跨文档格式相似度。
   format_similarity: 0.25
+
+risk_thresholds:
+  low: 0.20
+  medium: 0.40
+  high: 0.65
+  critical: 0.85
+
+# 没有图片或没有足够 AI 分析文本时，不适用维度不按 0 分稀释风险。
+missing_dimension_policy: renormalize_applicable_weights
+aggregate_strategy: max_document_risk

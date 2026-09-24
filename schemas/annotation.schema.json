@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/annotation.schema.json",
+  "title": "DocxAnnotationResult",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "annotation_type",
+    "source_document_id",
+    "source_filename",
+    "output_filename",
+    "annotations",
+    "skipped",
+    "summary",
+    "metadata"
+  ],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "annotation_type": {"const": "docx_comments"},
+    "source_document_id": {"type": "string"},
+    "source_filename": {"type": "string"},
+    "output_filename": {"type": "string"},
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "finding_id",
+          "finding_type",
+          "severity",
+          "target_role",
+          "source_locator",
+          "comment_id",
+          "comment_text"
+        ],
+        "properties": {
+          "finding_id": {"type": "string"},
+          "finding_type": {"type": "string"},
+          "severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+          "target_role": {"enum": ["source", "peer"]},
+          "source_locator": {"type": "object"},
+          "comment_id": {"type": "integer", "minimum": 0},
+          "comment_text": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "skipped": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "finding_type", "reason", "target_role", "source_locator"],
+        "properties": {
+          "finding_id": {"type": "string"},
+          "finding_type": {"type": "string"},
+          "reason": {"type": "string"},
+          "target_role": {"type": ["string", "null"]},
+          "source_locator": {"type": ["object", "null"]}
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["input_findings", "annotated_comments", "skipped_findings", "skip_reasons"],
+      "properties": {
+        "input_findings": {"type": "integer", "minimum": 0},
+        "annotated_comments": {"type": "integer", "minimum": 0},
+        "skipped_findings": {"type": "integer", "minimum": 0},
+        "skip_reasons": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "source_sha256",
+        "output_sha256",
+        "author",
+        "initials",
+        "min_severity",
+        "max_comments"
+      ],
+      "properties": {
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "output_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "author": {"type": "string", "minLength": 1},
+        "initials": {"type": "string", "minLength": 1},
+        "min_severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+        "max_comments": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

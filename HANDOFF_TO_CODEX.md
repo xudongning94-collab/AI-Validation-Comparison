@@ -1,213 +1,73 @@
-# AI-Validation-Comparison — Work / Codex 续接说明
+# HANDOFF TO CODEX
 
-## 项目目标
+## 当前基线
 
-开发“投标文件多文档比对校验智能体”。
+- 当前版本：`v0.1.0-alpha.7`
+- 已完成：D0–D9 Alpha
+- 自动化测试：30/30 通过
+- 架构原则：Codex 重开发、HiAgent 轻配置
 
-总体原则：
+本地工程由 `bid-compare-agent_v0.1.0-alpha.4.zip` 恢复。恢复包没有 `.git`，因此无法在当前环境核验原交接提交 `ac3ad5086c296a1560764ff98920a97b809368bb`；但恢复包版本、D0–D6 文档与 15 个原始测试一致。在此基础上完成 D7–D9，并将自动化测试扩充至 30 项。
 
-- **Codex 重开发，HiAgent 轻配置**
-- 核心解析、比对、评分、批注、API、测试全部在本仓库维护
-- HiAgent 仅承担文件入口、流程编排、少量 LLM 节点、飞书发布与结果展示
-- 所有核心节点使用版本化 JSON Schema
-- 所有 Finding 必须可反向定位到原文
-- 阈值、权重、风险规则必须配置化
-- 每个开发阶段先通过本地测试，再接入 HiAgent
+## 已完成能力
 
-## GitHub
+- D0：工程基线
+- D1：DocumentIR / Finding / Comparison Schema
+- D2：DOCX/PDF Parser Alpha
+- D3：文本查重 Alpha
+- D4：格式检查 Alpha
+- D5：干扰识别及文本查重降权
+- D6：图片重复检测 Alpha
+- D7：AI 疑似度辅助分析 Alpha
+- D8：统一风险评分 Alpha
+- D9：Word 反向定位与原生批注 Alpha
 
-Repository:
+## 不可突破的约束
 
-`https://github.com/xudongning94-collab/AI-Validation-Comparison.git`
+1. 核心解析、检测和评分逻辑必须保留在 Codex 工程中。
+2. HiAgent 只承担文件入口、编排、少量 LLM 复核和展示。
+3. Finding 必须携带可追踪的 `source_locator`。
+4. 阈值、权重和风险等级必须配置化。
+5. AI 疑似度必须标记为非确定性辅助信号，并要求人工复核。
+6. 每阶段完成时更新 Schema、测试、README、基线和 CHANGELOG。
 
-当前主分支：`main`
+## D7 说明
 
-当前工程版本：
+- 方法：`stylometry-heuristic-alpha-v1`
+- 信号：句长规则度、连接词密度、通用措辞、重复短语、标点规则度
+- 干扰：标题/短文本排除，模板响应降权
+- 输出：文档/段落分数、置信度、信号、Finding、限制声明
+- Schema：`schemas/ai_likelihood.schema.json`
+- CLI：`scripts/analyze_ai_likelihood.py`
 
-`v0.1.0-alpha.4`
+## D8 说明
 
-本轮同步后的主线提交：
+- 默认权重：文本 0.40、图片 0.20、AI 0.15、格式 0.25
+- 缺失策略：不适用维度排除后重新归一化
+- 汇总策略：文档集风险取最高文档风险，同时记录平均分
+- 风险等级：minimal / low / medium / high / critical
+- Schema：`schemas/scoring.schema.json`
+- CLI：`scripts/score_documents.py`
 
-`efc074bde3dff43ef2b5646f0ac8385b2e3f5259`
+## D9 说明
 
-后续又补充了完整同步文件与测试，继续开发时应以 **main 最新 HEAD** 为准，而不是以旧 ZIP 为准。
-
-## 已完成阶段
-
-### D0 工程基线
-- 项目目录
-- README / PROJECT_BASELINE / CHANGELOG
-- pyproject / requirements
-- 配置目录
-- HiAgent 适配目录
-
-### D1 数据协议
-- DocumentIR
-- Finding
-- TextComparisonResult
-- ImageComparisonResult
-- Report Schema
-- JSON Schema 校验
-
-### D2 文档解析 Alpha
-支持：
-- DOCX
-- PDF
-- 段落
-- 标题层级
-- 表格
-- 图片
-- 字体 / 字号
-- 页边距
-- 页眉页脚
-- source_locator
-- 稳定 document_id / SHA-256
-
-### D3 文本查重 Alpha
-- 2–5 文档两两比对
-- 中文 / 英文 / 数字标准化
-- char n-gram 倒排召回
-- TF-IDF + SequenceMatcher + containment 融合
-- 高度重复 / 中度相似
-- Finding 双向定位
-- 重复率
-- Top 章节
-- SemanticReranker 扩展接口
-
-### D4 格式检查 Alpha
-- 正文主流字体 / 字号识别
-- 格式离群检测
-- 页边距基础异常
-
-### D5 干扰识别 Alpha
-- 标题排除
-- 短文本排除
-- 招标响应 / 法定模板识别
-- exclude / downweight
-- 已接入 D3 文本查重
-
-### D6 图片重复检测 Alpha
-- 图片 SHA-256
-- pHash
-- 汉明距离
-- 平均 RGB
-- 宽高比辅助过滤
-- DOCX 图片尽量映射回正文段落
-- PDF 图片定位
-- 图片重复率
-- 图片 Finding
-- image_compare.schema.json
-
-## 当前验证
-
-本地开发快照验证：
-
-- compileall 通过
-- pytest：15/15 通过
-- TextComparisonResult Schema 通过
-- ImageComparisonResult Schema 通过
-
-继续开发前建议第一步重新运行：
-
-```bash
-python -m compileall src scripts tests
-pytest -q
-```
-
-如果 GitHub main 的测试结果与 15/15 不一致，优先排查同步遗漏，不要直接进入下一阶段。
-
-## 下一阶段
-
-### D7 — AI 疑似度辅助分析 Alpha
-
-注意：禁止将结果设计为“AI 作者识别事实”。
-
-统一使用：
-
-- `ai_likelihood_score`
-- “AI 疑似度”
-- “仅供辅助判断”
-
-建议实现：
-
-1. 文本统计特征
-   - 句长分布
-   - 词汇多样性
-   - 过渡词密度
-   - 标点节奏
-   - 段落结构一致性
-2. LLM Judge 抽象接口
-   - 默认可关闭
-   - 后续可从 HiAgent 或 HTTP 模型服务调用
-3. 每段输出 0–1 疑似度
-4. 文档级加权汇总
-5. 明确置信度与免责声明
-6. 新增 ai_detection.schema.json
-7. 新增单元和集成测试
-
-### D8 — 统一评分引擎
-
-整合：
-
-- text_similarity
-- image_similarity
-- format_similarity / format risk
-- ai_likelihood
-
-要求：
-
-- 权重来自 `configs/scoring.yaml`
-- 不在代码里硬编码
-- 输出维度分、总分、风险级别
-- 保留原始指标与归一化过程
-- 评分结果可解释
-- 新增 scoring / report builder
-- 新增 report.schema 扩展与测试
+- 输入：DOCX 原文件 + Finding JSON
+- 定位：正文段落索引、表格/行/单元格索引，支持对端 `peer_source_locator`
+- 输出：不覆盖原文件的批注 DOCX + Annotation JSON
+- 安全策略：最低严重度、最大批注数、重复项去重、不可定位项记录跳过原因
+- 审计：记录源文件/输出文件 SHA-256、批注 ID、Finding ID 和完整定位信息
+- Schema：`schemas/annotation.schema.json`
+- CLI：`scripts/annotate_docx.py`
 
 ## 后续路线
 
-D7 → D8 → D9 Word 批注 → D10 HTTP API → D11 本地端到端 Benchmark → H1-H4 HiAgent / 飞书
+1. D10：HTTP API，暴露 parse/preprocess/compare/check/ai-check/score/annotate
+2. D11：真实样本文档 Benchmark、误报/漏报和性能基线
+3. H1–H4：HiAgent 工作流、飞书机器人与卡片展示
 
-### D9 Word 批注
-- 文本重复：高亮 + 批注
-- AI 疑似：另一种高亮
-- 格式问题：下划线 / 批注
-- 图片重复：尽量定位相关段落 / 图位置
-- 原文件另存，不破坏原件
+## 继续开发前检查
 
-### D10 HTTP API
-预期接口：
-
-```text
-POST /parse
-POST /preprocess
-POST /text-compare
-POST /image-compare
-POST /format-check
-POST /ai-check
-POST /score
-POST /annotate-docx
+```powershell
+.\.tools\python313\python.exe -m compileall -q src scripts tests
+.\.tools\python313\python.exe -m pytest -q --basetemp .pytest-tmp
 ```
-
-最终供 HiAgent 以 HTTP / 自定义插件方式调用。
-
-## 关键技术约束
-
-1. 不把大量 Python 代码复制进 HiAgent。
-2. HiAgent 不成为代码唯一来源。
-3. Prompt 文件必须保存在 repo 中。
-4. Schema 是接口契约。
-5. source_locator 是后续批注功能的基础，不得破坏。
-6. 任何算法升级必须保留版本号或 algorithm metadata。
-7. 不删除测试来让 CI 变绿。
-8. 发现当前实现缺陷可以直接修，不留下明显技术债。
-9. 优先工程完整性，不要反复只跑测试却不推进功能。
-10. 每个阶段完成后更新 README、CHANGELOG、PROJECT_BASELINE。
-
-## 推荐给 Codex 的首条任务
-
-> 打开当前仓库 main 分支，先核验工程完整性并运行全部测试。确认 D0-D6 Alpha 状态与 HANDOFF_TO_CODEX.md 一致后，直接开发 D7 AI 疑似度辅助分析 Alpha。保持“Codex 重开发、HiAgent 轻配置”，新增配置、Schema、实现、CLI 和自动化测试；不要把 AI 检测描述为确定性 AI 作者识别。D7 完成且测试通过后更新 README、CHANGELOG、PROJECT_BASELINE，并提交到 GitHub。随后继续 D8 统一评分引擎。
-
-## 推荐给 ChatGPT Work 的首条任务
-
-> 接管 GitHub 仓库 AI-Validation-Comparison 的持续开发。先读取 HANDOFF_TO_CODEX.md、README.md、PROJECT_BASELINE.md、CHANGELOG.md，核验 main 分支当前代码和测试。然后按 D7 → D8 → D9 → D10 → D11 的路线持续执行，每完成一个阶段都运行测试、更新文档并提交 GitHub。HiAgent 只做轻配置，核心能力始终保留在仓库中。

@@ -1,4 +1,6 @@
 .venv/
+.tools/
+.pytest-tmp/
 __pycache__/
 *.py[cod]
 .pytest_cache/

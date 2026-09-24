@@ -21,3 +21,16 @@ image_similarity:
   min_side_px: 8
 interference:
   template_similarity: 0.90
+ai_likelihood:
+  # D7 Alpha 是可解释风格信号，不是 AI 生成的确定性判定。
+  min_chars: 80
+  medium: 0.55
+  high: 0.75
+  min_confidence: 0.35
+  interference_downweight_factor: 0.70
+  weights:
+    sentence_uniformity: 0.30
+    transition_density: 0.25
+    generic_phrase: 0.20
+    repeated_phrase: 0.15
+    punctuation_uniformity: 0.10
