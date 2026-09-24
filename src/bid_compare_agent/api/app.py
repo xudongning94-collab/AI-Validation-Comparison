@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Annotated, Any, Callable
 from zipfile import BadZipFile
@@ -15,7 +17,10 @@ from pymupdf import FileDataError
 from starlette.background import BackgroundTask
 
 from bid_compare_agent import __version__
+from bid_compare_agent.tasks import TaskNotFoundError, TaskStore
+from bid_compare_agent.utils.io import file_sha256
 
+from .auth import ApiAuthConfig
 from .pipeline import ApiPipeline, findings_from_payload
 from .uploads import (
     DEFAULT_MAX_UPLOAD_BYTES,
@@ -44,6 +49,8 @@ def create_app(
     *,
     max_upload_bytes: int = DEFAULT_MAX_UPLOAD_BYTES,
     pipeline: ApiPipeline | None = None,
+    auth_config: ApiAuthConfig | None = None,
+    task_store: TaskStore | None = None,
 ) -> FastAPI:
     application = FastAPI(
         title="Bid Compare Agent API",
@@ -52,6 +59,28 @@ def create_app(
     )
     application.state.pipeline = pipeline or ApiPipeline()
     application.state.max_upload_bytes = max_upload_bytes
+    application.state.auth_config = auth_config or ApiAuthConfig.from_env()
+    application.state.task_store = task_store or TaskStore(":memory:")
+
+    @application.middleware("http")
+    async def authenticate_request(request: Request, call_next: Callable[..., Any]):
+        if request.url.path == "/health":
+            request.state.actor_id = "anonymous-health"
+            return await call_next(request)
+        actor_id = application.state.auth_config.authenticate(request)
+        if actor_id is None:
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "error": {
+                        "code": "authentication_required",
+                        "message": "请求缺少有效身份凭证",
+                    }
+                },
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        request.state.actor_id = actor_id
+        return await call_next(request)
 
     @application.exception_handler(ApiInputError)
     async def api_input_error_handler(_request: Request, exc: ApiInputError) -> JSONResponse:
@@ -165,6 +194,139 @@ def create_app(
             result = await _run_pipeline(application.state.pipeline.ai_check, paths)
         return _envelope("ai_check", result)
 
+    @application.post("/v1/signature-check", tags=["analysis"])
+    async def signature_check_endpoint(
+        file: Annotated[UploadFile, File(description="待检查的 DOCX/PDF 文件")],
+        requirements_json: Annotated[str, Form(description="签署合规 requirements JSON")],
+        evidence_json: Annotated[
+            str | None,
+            Form(description="可选 OCR/视觉页证据 JSON"),
+        ] = None,
+    ) -> dict[str, Any]:
+        try:
+            requirements_payload = json.loads(requirements_json)
+            evidence_payload = json.loads(evidence_json) if evidence_json else None
+        except json.JSONDecodeError as exc:
+            raise ApiInputError(
+                "invalid_signature_json",
+                "签署规则或视觉证据不是有效 JSON",
+                422,
+            ) from exc
+        if evidence_payload is not None and not isinstance(evidence_payload, dict):
+            raise ApiInputError(
+                "invalid_signature_evidence",
+                "视觉证据 JSON 必须是对象",
+                422,
+            )
+        with tempfile.TemporaryDirectory(prefix="bid-compare-api-") as raw_dir:
+            path = await persist_upload(
+                file,
+                Path(raw_dir) / "source",
+                max_bytes=application.state.max_upload_bytes,
+            )
+            result = await _run_pipeline(
+                application.state.pipeline.signature_check,
+                path,
+                requirements_payload,
+                evidence_payload,
+            )
+        return _envelope("signature_check", result)
+
+    @application.post("/v1/analyze", tags=["analysis"])
+    async def analyze_endpoint(
+        request: Request,
+        files: Annotated[list[UploadFile], File(description="2-5 个 DOCX/PDF 文件")],
+    ) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory(prefix="bid-compare-api-") as raw_dir:
+            paths = await save_document_set(files, raw_dir, minimum=2)
+            file_records = [
+                {
+                    "filename": path.name,
+                    "file_type": path.suffix.lower().lstrip("."),
+                    "size_bytes": path.stat().st_size,
+                    "sha256": file_sha256(path),
+                }
+                for path in paths
+            ]
+            request_fingerprint = hashlib.sha256(
+                json.dumps(
+                    {"api_version": API_VERSION, "files": file_records},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()
+            task_id = f"task-{uuid.uuid4().hex}"
+            actor_id = str(request.state.actor_id)
+            application.state.task_store.create_task(
+                task_id,
+                request_fingerprint=request_fingerprint,
+                context={
+                    "schema_version": "1.0.0",
+                    "actor_id": actor_id,
+                    "api_version": API_VERSION,
+                    "files": file_records,
+                },
+                actor_id=actor_id,
+            )
+            application.state.task_store.transition(
+                task_id,
+                status="running",
+                stage="analysis",
+                event_type="analysis_started",
+                actor_id=actor_id,
+                payload={"file_count": len(paths)},
+            )
+            try:
+                result = await _run_pipeline(application.state.pipeline.analyze, paths)
+            except Exception as exc:
+                error_code = exc.code if isinstance(exc, ApiInputError) else "analysis_failed"
+                application.state.task_store.transition(
+                    task_id,
+                    status="failed",
+                    stage="analysis",
+                    event_type="analysis_failed",
+                    actor_id=actor_id,
+                    payload={"exception_type": type(exc).__name__},
+                    error_code=str(error_code),
+                    error_message=str(exc),
+                )
+                raise
+            result["task"] = {
+                "task_id": task_id,
+                "request_fingerprint": request_fingerprint,
+            }
+            application.state.task_store.transition(
+                task_id,
+                status="succeeded",
+                stage="complete",
+                event_type="analysis_succeeded",
+                actor_id=actor_id,
+                payload={
+                    "report_id": result["report"]["report_id"],
+                    "finding_count": len(result["findings"]),
+                },
+            )
+        return _envelope("analyze", result)
+
+    @application.get("/v1/tasks/{task_id}", tags=["tasks"])
+    async def task_detail(task_id: str, request: Request) -> dict[str, Any]:
+        try:
+            task = application.state.task_store.get_task(task_id)
+        except TaskNotFoundError as exc:
+            raise ApiInputError("task_not_found", "任务不存在", status_code=404) from exc
+        actor_id = str(request.state.actor_id)
+        if task["context"].get("actor_id") != actor_id:
+            raise ApiInputError("task_not_found", "任务不存在", status_code=404)
+        return _envelope(
+            "task_detail",
+            {
+                "task": task,
+                "events": application.state.task_store.list_events(task_id),
+                "audit_chain_valid": application.state.task_store.verify_audit_chain(task_id),
+            },
+        )
+
     @application.post("/v1/score", tags=["analysis"])
     async def score_endpoint(
         files: Annotated[list[UploadFile], File(description="2-5 个 DOCX/PDF 文件")],
@@ -227,4 +389,4 @@ def create_app(
     return application
 
 
-app = create_app()
+app = create_app(task_store=TaskStore.from_env())

@@ -1,0 +1,74 @@
+{
+  "schema": "2.0",
+  "config": {
+    "update_multi": true
+  },
+  "header": {
+    "title": {
+      "tag": "plain_text",
+      "content": "投标文件比对报告"
+    },
+    "subtitle": {
+      "tag": "plain_text",
+      "content": "任务 ${task_id}"
+    },
+    "template": "${header_template}"
+  },
+  "body": {
+    "elements": [
+      {
+        "tag": "markdown",
+        "content": "**总体风险：** <text_tag color='${risk_color}'>${risk_level_label}</text_tag>\n**风险分数：** ${aggregate_score_100}/100\n**分析文件：** ${document_count} 份"
+      },
+      {
+        "tag": "hr"
+      },
+      {
+        "tag": "markdown",
+        "content": "**结论摘要**\n${summary}"
+      },
+      {
+        "tag": "markdown",
+        "content": "**优先复核项**\n${top_findings_markdown}"
+      },
+      {
+        "tag": "markdown",
+        "content": "**建议动作**\n${recommended_actions_markdown}"
+      },
+      {
+        "tag": "hr"
+      },
+      {
+        "tag": "markdown",
+        "content": "> 风险评分仅用于筛查优先级，不构成违规结论。AI 疑似度是非诊断性辅助信号，所有结果必须人工复核。"
+      },
+      {
+        "tag": "column_set",
+        "horizontal_align": "right",
+        "horizontal_spacing": "8px",
+        "columns": [
+          {
+            "tag": "column",
+            "width": "auto",
+            "elements": [
+              {
+                "tag": "button",
+                "type": "primary",
+                "text": {
+                  "tag": "plain_text",
+                  "content": "查看完整报告"
+                },
+                "behaviors": [
+                  {
+                    "type": "open_url",
+                    "default_url": "${report_url}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

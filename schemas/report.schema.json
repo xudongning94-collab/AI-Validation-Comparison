@@ -1,15 +1,110 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/report.schema.json",
   "title": "CompareReport",
   "type": "object",
-  "required": ["report_id", "schema_version", "documents", "findings", "scores"],
+  "required": [
+    "report_id",
+    "schema_version",
+    "language",
+    "summary",
+    "risk_level",
+    "requires_human_review",
+    "documents",
+    "findings",
+    "scores",
+    "recommended_actions",
+    "limitations"
+  ],
   "properties": {
-    "report_id": {"type": "string"},
-    "schema_version": {"type": "string"},
-    "documents": {"type": "array"},
-    "findings": {"type": "array"},
-    "scores": {"type": "object"},
-    "risk_level": {"type": ["string", "null"]},
-    "summary": {"type": ["string", "null"]}
-  }
+    "report_id": {"type": "string", "minLength": 1},
+    "schema_version": {"const": "1.0.0"},
+    "language": {"const": "zh-CN"},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 1000},
+    "risk_level": {"enum": ["minimal", "low", "medium", "high", "critical"]},
+    "requires_human_review": {"const": true},
+    "documents": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["document_id", "filename", "score_100", "risk_level"],
+        "properties": {
+          "document_id": {"type": "string", "minLength": 1},
+          "filename": {"type": "string", "minLength": 1},
+          "score_100": {"type": "number", "minimum": 0, "maximum": 100},
+          "risk_level": {"enum": ["minimal", "low", "medium", "high", "critical"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "type", "severity", "document_id", "summary", "source_locator"],
+        "properties": {
+          "finding_id": {"type": "string", "minLength": 1},
+          "type": {"enum": ["text_similarity", "image_similarity", "format_issue", "ai_likelihood", "interference", "signature_compliance"]},
+          "severity": {"enum": ["info", "low", "medium", "high", "critical"]},
+          "document_id": {"type": "string"},
+          "peer_document_id": {"type": ["string", "null"]},
+          "summary": {"type": "string", "minLength": 1, "maxLength": 500},
+          "source_locator": {"type": "object"},
+          "peer_source_locator": {"type": ["object", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "scores": {
+      "type": "object",
+      "required": ["aggregate_score_100", "aggregate_risk_level", "dimensions"],
+      "properties": {
+        "aggregate_score_100": {"type": "number", "minimum": 0, "maximum": 100},
+        "aggregate_risk_level": {"enum": ["minimal", "low", "medium", "high", "critical"]},
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "applicable", "contribution"],
+            "properties": {
+              "name": {"enum": ["text_similarity", "image_similarity", "ai_likelihood", "format_similarity"]},
+              "applicable": {"type": "boolean"},
+              "contribution": {"type": "number", "minimum": 0, "maximum": 1}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "recommended_actions": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["priority", "action", "related_finding_ids"],
+        "properties": {
+          "priority": {"enum": ["immediate", "high", "normal"]},
+          "action": {"type": "string", "minLength": 1, "maxLength": 500},
+          "related_finding_ids": {
+            "type": "array",
+            "maxItems": 5,
+            "uniqueItems": true,
+            "items": {"type": "string"}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {"type": "string", "minLength": 1, "maxLength": 500}
+    }
+  },
+  "additionalProperties": false
 }

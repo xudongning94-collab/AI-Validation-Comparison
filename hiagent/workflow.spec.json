@@ -1,0 +1,117 @@
+{
+  "spec_version": "1.0.0",
+  "name": "bid-compare-hiagent-alpha",
+  "api_version": "1.0.0",
+  "entry_node": "receive_files",
+  "limits": {
+    "minimum_files": 2,
+    "maximum_files": 5,
+    "maximum_file_mb": 50,
+    "allowed_extensions": [".docx", ".pdf"]
+  },
+  "nodes": [
+    {
+      "id": "receive_files",
+      "type": "input",
+      "output": "uploaded_files"
+    },
+    {
+      "id": "validate_files",
+      "type": "validation",
+      "input": "uploaded_files",
+      "checks": ["file_count", "extension", "size", "non_empty"]
+    },
+    {
+      "id": "health_check",
+      "type": "http",
+      "method": "GET",
+      "path": "/health",
+      "expected": {
+        "status": "ok",
+        "api_version": "1.0.0"
+      }
+    },
+    {
+      "id": "analyze_bundle",
+      "type": "http",
+      "method": "POST",
+      "path": "/v1/analyze",
+      "file_field": "files",
+      "output": "analysis_result",
+      "provides": ["findings", "report", "scoring", "task"],
+      "report_mode": "local_deterministic",
+      "failure_policy": "fail_closed",
+      "idempotency": "task_request_fingerprint"
+    },
+    {
+      "id": "annotation_decision",
+      "type": "condition",
+      "expression": "request_annotation == true AND has_docx == true"
+    },
+    {
+      "id": "annotate_docx",
+      "type": "http_each",
+      "method": "POST",
+      "path": "/v1/annotate-docx",
+      "file_field": "file",
+      "form_fields": {
+        "findings_json": "analysis_result.result.findings"
+      },
+      "output": "annotated_documents",
+      "idempotency": "do_not_retry_after_binary_response"
+    },
+    {
+      "id": "render_card",
+      "type": "template",
+      "inputs": ["analysis_result.result.report", "analysis_result.result.results.scoring", "annotated_documents"],
+      "template": "hiagent/feishu_card.template.json",
+      "output": "feishu_card"
+    },
+    {
+      "id": "input_error",
+      "type": "terminal_error",
+      "safe_message": "文件数量、格式或大小不符合要求，请检查后重试。"
+    },
+    {
+      "id": "service_error",
+      "type": "terminal_error",
+      "safe_message": "分析服务暂时不可用，请稍后重试并保留任务编号。"
+    },
+    {
+      "id": "complete",
+      "type": "terminal_success"
+    }
+  ],
+  "transitions": [
+    {"from": "receive_files", "to": "validate_files", "on": "success"},
+    {"from": "validate_files", "to": "health_check", "on": "success"},
+    {"from": "validate_files", "to": "input_error", "on": "failure"},
+    {"from": "health_check", "to": "analyze_bundle", "on": "success"},
+    {"from": "health_check", "to": "service_error", "on": "failure"},
+    {"from": "analyze_bundle", "to": "annotation_decision", "on": "success"},
+    {"from": "analyze_bundle", "to": "input_error", "on": "http_4xx"},
+    {"from": "analyze_bundle", "to": "service_error", "on": "timeout_or_5xx"},
+    {"from": "annotation_decision", "to": "annotate_docx", "on": "true"},
+    {"from": "annotation_decision", "to": "render_card", "on": "false"},
+    {"from": "annotate_docx", "to": "render_card", "on": "success"},
+    {"from": "annotate_docx", "to": "render_card", "on": "partial_failure"},
+    {"from": "render_card", "to": "complete", "on": "success"}
+  ],
+  "policies": {
+    "network_retry": {
+      "maximum_attempts": 2,
+      "retry_on": ["timeout", "http_500", "http_502", "http_503", "http_504"],
+      "never_retry_on": ["http_400", "http_413", "http_415", "http_422"]
+    },
+    "privacy": {
+      "log_file_content": false,
+      "log_full_findings": false,
+      "log_access_tokens": false,
+      "retain_uploaded_files": false
+    },
+    "ai_likelihood": {
+      "diagnostic": false,
+      "requires_human_review": true
+    }
+  }
+}

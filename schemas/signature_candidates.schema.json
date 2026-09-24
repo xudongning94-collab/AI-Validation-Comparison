@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/signature_candidates.schema.json",
+  "title": "SignatureSealCandidateWorkerResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "engine", "status", "page_number", "image_sha256",
+    "canvas", "candidates", "count", "error", "metadata"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "engine": {"const": "opencv"},
+    "status": {"enum": ["ok", "failed", "disabled"]},
+    "page_number": {"type": "integer", "minimum": 1},
+    "image_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "canvas": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width", "height"],
+          "properties": {
+            "width": {"type": "integer", "minimum": 1},
+            "height": {"type": "integer", "minimum": 1}
+          }
+        },
+        {"type": "null"}
+      ]
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id", "kind", "page_number", "bbox", "confidence",
+          "recognized_text", "quality_flags", "detector", "features"
+        ],
+        "properties": {
+          "candidate_id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["signature", "seal"]},
+          "page_number": {"type": "integer", "minimum": 1},
+          "bbox": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x", "y", "w", "h"],
+            "properties": {
+              "x": {"type": "number", "minimum": 0},
+              "y": {"type": "number", "minimum": 0},
+              "w": {"type": "number", "exclusiveMinimum": 0},
+              "h": {"type": "number", "exclusiveMinimum": 0}
+            }
+          },
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "recognized_text": {"type": ["string", "null"]},
+          "quality_flags": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": ["clipped", "low_opacity", "blurred", "unreadable", "occluded"]
+            }
+          },
+          "detector": {"type": "string", "minLength": 1},
+          "features": {"type": "object"}
+        }
+      }
+    },
+    "count": {"type": "integer", "minimum": 0},
+    "error": {"type": ["string", "null"]},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "authenticity_check", "signature_roi_count"],
+      "properties": {
+        "method": {"const": "signature-seal-candidates-cv-v1"},
+        "authenticity_check": {"const": false},
+        "signature_roi_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

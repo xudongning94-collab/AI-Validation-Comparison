@@ -40,7 +40,7 @@ def test_health_and_openapi_expose_versioned_routes():
     assert health.json() == {
         "status": "ok",
         "service": "bid-compare-agent",
-        "version": "0.1.0-alpha.8",
+        "version": "0.1.0-alpha.12",
         "api_version": "1.0.0",
     }
 
@@ -50,6 +50,7 @@ def test_health_and_openapi_expose_versioned_routes():
         "/v1/preprocess",
         "/v1/text-compare",
         "/v1/image-compare",
+        "/v1/analyze",
         "/v1/format-check",
         "/v1/ai-check",
         "/v1/score",
@@ -99,6 +100,24 @@ def test_analysis_and_scoring_endpoints_cover_complete_pipeline():
             or result.get("score_type")
         )
         assert actual_type == result_type
+
+
+def test_analyze_endpoint_returns_complete_bundle_and_deterministic_report():
+    client = TestClient(create_app())
+
+    response = client.post("/v1/analyze", files=_document_files())
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["operation"] == "analyze"
+    result = payload["result"]
+    assert result["analysis_type"] == "complete_analysis"
+    assert result["metadata"]["parsed_once"] is True
+    assert result["report"]["report_id"].startswith("report-")
+    assert result["report"]["requires_human_review"] is True
+    assert set(result["results"]) == {
+        "text_comparison", "image_comparison", "format_checks", "ai_likelihood", "scoring"
+    }
 
 
 def test_annotate_endpoint_returns_native_word_comments():

@@ -1,0 +1,20 @@
+{
+  "requirements": [
+    {
+      "rule_id": "tender-letter-signature",
+      "title": "投标函签署页",
+      "expected_company_names": ["请替换为投标主体全称", "请替换为允许简称"],
+      "expected_signer_names": ["请替换为法定代表人或授权代表姓名"],
+      "signer_role": "法定代表人或授权代表",
+      "require_signature": true,
+      "require_seal": true,
+      "require_date": true,
+      "allowed_pages": [],
+      "anchor_terms": ["投标人", "法定代表人", "授权代表", "日期"],
+      "date_not_before": null,
+      "date_not_after": null,
+      "minimum_candidate_confidence": 0.65,
+      "minimum_text_confidence": 0.82
+    }
+  ]
+}

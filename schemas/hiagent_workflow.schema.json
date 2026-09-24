@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/hiagent-workflow.schema.json",
+  "title": "HiAgentWorkflowSpec",
+  "type": "object",
+  "required": ["spec_version", "name", "api_version", "entry_node", "limits", "nodes", "transitions", "policies"],
+  "properties": {
+    "spec_version": {"const": "1.0.0"},
+    "name": {"type": "string", "minLength": 1},
+    "api_version": {"const": "1.0.0"},
+    "entry_node": {"type": "string"},
+    "limits": {
+      "type": "object",
+      "required": ["minimum_files", "maximum_files", "maximum_file_mb", "allowed_extensions"],
+      "properties": {
+        "minimum_files": {"type": "integer", "minimum": 1},
+        "maximum_files": {"type": "integer", "minimum": 1},
+        "maximum_file_mb": {"type": "integer", "minimum": 1},
+        "allowed_extensions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^\\.[a-z0-9]+$"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "type": {"type": "string", "minLength": 1}
+        },
+        "additionalProperties": true
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "on"],
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "on": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "policies": {
+      "type": "object",
+      "required": ["network_retry", "privacy", "ai_likelihood"]
+    }
+  },
+  "additionalProperties": false
+}

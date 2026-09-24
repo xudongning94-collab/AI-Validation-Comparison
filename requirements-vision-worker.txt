@@ -1,0 +1,9 @@
+# Isolated OCR/CV worker runtime. Use CPython 3.12; do not install into the
+# main API's Python 3.13 environment.
+paddleocr==3.7.0
+paddlepaddle==3.3.1
+paddlex==3.7.2
+opencv-contrib-python==4.10.0.84
+numpy>=1.26,<3
+Pillow>=10,<13
+jsonschema>=4.22,<5

@@ -1,0 +1,27 @@
+{
+  "benchmark_id": "replace-with-local-case-id",
+  "privacy": {
+    "include_raw_text": false
+  },
+  "documents": [
+    {"id": "tender", "role": "tender_reference", "path": "local/tender.pdf"},
+    {"id": "old", "role": "response_old", "path": "local/response-old.docx"},
+    {"id": "new", "role": "response_new", "path": "local/response-new.docx"}
+  ],
+  "revision_pairs": [
+    {
+      "id": "old-vs-new",
+      "left": "old",
+      "right": "new",
+      "expectations": {
+        "min_text_repeated_rate": 0.9,
+        "min_image_repeated_rate": 0.9,
+        "min_exact_sequence_ratio": 0.8,
+        "require_file_difference": true
+      }
+    }
+  ],
+  "reference_checks": [
+    {"id": "tender-attribution", "reference": "tender", "targets": ["old", "new"]}
+  ]
+}

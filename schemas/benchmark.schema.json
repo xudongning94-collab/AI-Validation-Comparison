@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/benchmark.schema.json",
+  "title": "End-to-End Benchmark Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "benchmark_type",
+    "benchmark_id",
+    "status",
+    "privacy",
+    "documents",
+    "revision_pairs",
+    "reference_checks",
+    "performance",
+    "integrity",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "benchmark_type": {"const": "end_to_end"},
+    "benchmark_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["passed", "failed"]},
+    "privacy": {
+      "type": "object",
+      "required": ["raw_text_included", "source_files_embedded", "report_contains_filenames_and_hashes"],
+      "properties": {
+        "raw_text_included": {"const": false},
+        "source_files_embedded": {"const": false},
+        "report_contains_filenames_and_hashes": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "documents": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["id", "role", "filename", "file_type", "size_bytes", "sha256", "document_id", "paragraph_count", "table_count", "image_count", "warning_count"],
+        "properties": {
+          "id": {"type": "string"},
+          "role": {"enum": ["tender_reference", "response_old", "response_new", "response"]},
+          "filename": {"type": "string"},
+          "file_type": {"enum": ["docx", "pdf"]},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "document_id": {"type": "string"},
+          "page_count": {"type": ["integer", "null"], "minimum": 0},
+          "paragraph_count": {"type": "integer", "minimum": 0},
+          "table_count": {"type": "integer", "minimum": 0},
+          "image_count": {"type": "integer", "minimum": 0},
+          "warning_count": {"type": "integer", "minimum": 0}
+        },
+        "additionalProperties": false
+      }
+    },
+    "revision_pairs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "left", "right", "metrics", "expectation_checks", "status", "timings_seconds"],
+        "properties": {
+          "id": {"type": "string"},
+          "left": {"type": "string"},
+          "right": {"type": "string"},
+          "metrics": {"type": "object"},
+          "expectation_checks": {"type": "array", "items": {"type": "object"}},
+          "status": {"enum": ["passed", "failed"]},
+          "timings_seconds": {"type": "object"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "reference_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "reference", "targets", "revision_pair_reference_attribution", "elapsed_seconds"],
+        "properties": {
+          "id": {"type": "string"},
+          "reference": {"type": "string"},
+          "targets": {"type": "array", "items": {"type": "object"}},
+          "revision_pair_reference_attribution": {"type": ["object", "null"]},
+          "elapsed_seconds": {"type": "number", "minimum": 0}
+        },
+        "additionalProperties": false
+      }
+    },
+    "performance": {
+      "type": "object",
+      "required": ["parse_seconds", "total_seconds"],
+      "properties": {
+        "parse_seconds": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0}},
+        "total_seconds": {"type": "number", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "integrity": {
+      "type": "object",
+      "required": ["inputs_unchanged", "verified_file_count"],
+      "properties": {
+        "inputs_unchanged": {"const": true},
+        "verified_file_count": {"type": "integer", "minimum": 2}
+      },
+      "additionalProperties": false
+    },
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

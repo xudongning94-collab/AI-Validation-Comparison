@@ -11,4 +11,7 @@ dist/
 *.egg-info/
 output/*.json
 !output/.gitkeep
+output/benchmark/
+benchmarks/local/
+data/
 .DS_Store

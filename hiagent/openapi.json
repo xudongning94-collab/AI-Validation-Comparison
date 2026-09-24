@@ -1,0 +1,752 @@
+{
+  "components": {
+    "schemas": {
+      "Body_ai_check_endpoint_v1_ai_check_post": {
+        "properties": {
+          "files": {
+            "description": "1-5 个 DOCX/PDF 文件",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_ai_check_endpoint_v1_ai_check_post",
+        "type": "object"
+      },
+      "Body_analyze_endpoint_v1_analyze_post": {
+        "properties": {
+          "files": {
+            "description": "2-5 个 DOCX/PDF 文件",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_analyze_endpoint_v1_analyze_post",
+        "type": "object"
+      },
+      "Body_annotate_docx_endpoint_v1_annotate_docx_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "待批注 DOCX",
+            "title": "File",
+            "type": "string"
+          },
+          "findings_json": {
+            "description": "Finding 数组或含 findings 字段的 JSON",
+            "title": "Findings Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "findings_json"
+        ],
+        "title": "Body_annotate_docx_endpoint_v1_annotate_docx_post",
+        "type": "object"
+      },
+      "Body_format_check_endpoint_v1_format_check_post": {
+        "properties": {
+          "files": {
+            "description": "1-5 个 DOCX/PDF 文件",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_format_check_endpoint_v1_format_check_post",
+        "type": "object"
+      },
+      "Body_image_compare_endpoint_v1_image_compare_post": {
+        "properties": {
+          "files": {
+            "description": "2-5 个 DOCX/PDF 文件",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_image_compare_endpoint_v1_image_compare_post",
+        "type": "object"
+      },
+      "Body_parse_endpoint_v1_parse_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "单个 DOCX/PDF 文件",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_endpoint_v1_parse_post",
+        "type": "object"
+      },
+      "Body_preprocess_endpoint_v1_preprocess_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "单个 DOCX/PDF 文件",
+            "title": "File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_preprocess_endpoint_v1_preprocess_post",
+        "type": "object"
+      },
+      "Body_score_endpoint_v1_score_post": {
+        "properties": {
+          "files": {
+            "description": "2-5 个 DOCX/PDF 文件",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_score_endpoint_v1_score_post",
+        "type": "object"
+      },
+      "Body_signature_check_endpoint_v1_signature_check_post": {
+        "properties": {
+          "evidence_json": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "可选 OCR/视觉页证据 JSON",
+            "title": "Evidence Json"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "待检查的 DOCX/PDF 文件",
+            "title": "File",
+            "type": "string"
+          },
+          "requirements_json": {
+            "description": "签署合规 requirements JSON",
+            "title": "Requirements Json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file",
+          "requirements_json"
+        ],
+        "title": "Body_signature_check_endpoint_v1_signature_check_post",
+        "type": "object"
+      },
+      "Body_text_compare_endpoint_v1_text_compare_post": {
+        "properties": {
+          "files": {
+            "description": "2-5 个 DOCX/PDF 文件",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_text_compare_endpoint_v1_text_compare_post",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "投标文件解析、比对、辅助分析、评分与 Word 批注 HTTP API",
+    "title": "Bid Compare Agent API",
+    "version": "0.1.0-alpha.12"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/v1/ai-check": {
+      "post": {
+        "operationId": "ai_check_endpoint_v1_ai_check_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ai_check_endpoint_v1_ai_check_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ai Check Endpoint V1 Ai Check Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ai Check Endpoint",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/v1/analyze": {
+      "post": {
+        "operationId": "analyze_endpoint_v1_analyze_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_endpoint_v1_analyze_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Analyze Endpoint V1 Analyze Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze Endpoint",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/v1/annotate-docx": {
+      "post": {
+        "operationId": "annotate_docx_endpoint_v1_annotate_docx_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_annotate_docx_endpoint_v1_annotate_docx_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Annotate Docx Endpoint",
+        "tags": [
+          "annotations"
+        ]
+      }
+    },
+    "/v1/format-check": {
+      "post": {
+        "operationId": "format_check_endpoint_v1_format_check_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_format_check_endpoint_v1_format_check_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Format Check Endpoint V1 Format Check Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Format Check Endpoint",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/v1/image-compare": {
+      "post": {
+        "operationId": "image_compare_endpoint_v1_image_compare_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_image_compare_endpoint_v1_image_compare_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Image Compare Endpoint V1 Image Compare Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Image Compare Endpoint",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/v1/parse": {
+      "post": {
+        "operationId": "parse_endpoint_v1_parse_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_endpoint_v1_parse_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Parse Endpoint V1 Parse Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Parse Endpoint",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/preprocess": {
+      "post": {
+        "operationId": "preprocess_endpoint_v1_preprocess_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_preprocess_endpoint_v1_preprocess_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Preprocess Endpoint V1 Preprocess Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preprocess Endpoint",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/score": {
+      "post": {
+        "operationId": "score_endpoint_v1_score_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_score_endpoint_v1_score_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Score Endpoint V1 Score Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Score Endpoint",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/v1/signature-check": {
+      "post": {
+        "operationId": "signature_check_endpoint_v1_signature_check_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_signature_check_endpoint_v1_signature_check_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Signature Check Endpoint V1 Signature Check Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Signature Check Endpoint",
+        "tags": [
+          "analysis"
+        ]
+      }
+    },
+    "/v1/tasks/{task_id}": {
+      "get": {
+        "operationId": "task_detail_v1_tasks__task_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task_id",
+            "required": true,
+            "schema": {
+              "title": "Task Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Task Detail V1 Tasks  Task Id  Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Task Detail",
+        "tags": [
+          "tasks"
+        ]
+      }
+    },
+    "/v1/text-compare": {
+      "post": {
+        "operationId": "text_compare_endpoint_v1_text_compare_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_text_compare_endpoint_v1_text_compare_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Text Compare Endpoint V1 Text Compare Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Text Compare Endpoint",
+        "tags": [
+          "analysis"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "report_id": "report-example-001",
+  "schema_version": "1.0.0",
+  "language": "zh-CN",
+  "summary": "本次分析 2 份响应文件，总体风险等级为 high。文本相似度对风险贡献最高，应优先核对共同来源和模板授权范围。所有结论均需人工复核。",
+  "risk_level": "high",
+  "requires_human_review": true,
+  "documents": [
+    {
+      "document_id": "doc-a",
+      "filename": "response-a.docx",
+      "score_100": 78.2,
+      "risk_level": "high"
+    },
+    {
+      "document_id": "doc-b",
+      "filename": "response-b.docx",
+      "score_100": 75.4,
+      "risk_level": "high"
+    }
+  ],
+  "findings": [
+    {
+      "finding_id": "finding-text-001",
+      "type": "text_similarity",
+      "severity": "high",
+      "document_id": "doc-a",
+      "peer_document_id": "doc-b",
+      "summary": "两份文件存在高相似段落，需核对共同来源。",
+      "source_locator": {
+        "paragraph_index": 12
+      },
+      "peer_source_locator": {
+        "paragraph_index": 16
+      }
+    }
+  ],
+  "scores": {
+    "aggregate_score_100": 78.2,
+    "aggregate_risk_level": "high",
+    "dimensions": [
+      {
+        "name": "text_similarity",
+        "applicable": true,
+        "contribution": 0.52
+      },
+      {
+        "name": "image_similarity",
+        "applicable": true,
+        "contribution": 0.08
+      },
+      {
+        "name": "ai_likelihood",
+        "applicable": true,
+        "contribution": 0.05
+      },
+      {
+        "name": "format_similarity",
+        "applicable": true,
+        "contribution": 0.13
+      }
+    ]
+  },
+  "recommended_actions": [
+    {
+      "priority": "high",
+      "action": "打开批注副本核对相似段落是否来自允许复用的模板或招标文件。",
+      "related_finding_ids": ["finding-text-001"]
+    }
+  ],
+  "limitations": [
+    "风险分数用于筛查优先级，不构成违规结论。",
+    "AI 疑似度是非诊断性辅助信号，必须人工复核。"
+  ]
+}
