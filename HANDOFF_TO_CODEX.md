@@ -2,12 +2,12 @@
 
 ## 当前基线
 
-- 当前版本：`v0.1.0-alpha.7`
-- 已完成：D0–D9 Alpha
-- 自动化测试：30/30 通过
+- 当前版本：`v0.1.0-alpha.8`
+- 已完成：D0–D10 Alpha
+- 自动化测试：39/39 通过
 - 架构原则：Codex 重开发、HiAgent 轻配置
 
-本地工程由 `bid-compare-agent_v0.1.0-alpha.4.zip` 恢复。恢复包没有 `.git`，因此无法在当前环境核验原交接提交 `ac3ad5086c296a1560764ff98920a97b809368bb`；但恢复包版本、D0–D6 文档与 15 个原始测试一致。在此基础上完成 D7–D9，并将自动化测试扩充至 30 项。
+本地工程由 `bid-compare-agent_v0.1.0-alpha.4.zip` 恢复。恢复包没有 `.git`，因此无法在当前环境核验原交接提交 `ac3ad5086c296a1560764ff98920a97b809368bb`；但恢复包版本、D0–D6 文档与 15 个原始测试一致。在此基础上完成 D7–D10，并将自动化测试扩充至 39 项。
 
 ## 已完成能力
 
@@ -21,6 +21,7 @@
 - D7：AI 疑似度辅助分析 Alpha
 - D8：统一风险评分 Alpha
 - D9：Word 反向定位与原生批注 Alpha
+- D10：HTTP API Alpha
 
 ## 不可突破的约束
 
@@ -59,11 +60,19 @@
 - Schema：`schemas/annotation.schema.json`
 - CLI：`scripts/annotate_docx.py`
 
+## D10 说明
+
+- 框架：FastAPI + Uvicorn，API 版本为 `1.0.0`
+- 路由：parse / preprocess / text-compare / image-compare / format-check / ai-check / score / annotate-docx
+- 边界：单文件默认 50 MB、每次 1–5 或 2–5 份、仅允许 DOCX/PDF，批注只允许 DOCX
+- 错误：统一 `{error: {code, message}}` 响应，并提供 `api_error.schema.json`
+- 运行：`python scripts/run_api.py --host 127.0.0.1 --port 8000`
+- 文档：启动后访问 `/docs` 或 `/openapi.json`
+
 ## 后续路线
 
-1. D10：HTTP API，暴露 parse/preprocess/compare/check/ai-check/score/annotate
-2. D11：真实样本文档 Benchmark、误报/漏报和性能基线
-3. H1–H4：HiAgent 工作流、飞书机器人与卡片展示
+1. D11：真实样本文档 Benchmark、误报/漏报和性能基线
+2. H1–H4：HiAgent 工作流、飞书机器人与卡片展示
 
 ## 继续开发前检查
 

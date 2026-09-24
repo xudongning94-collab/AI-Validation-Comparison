@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bid-compare-agent"
-version = "0.1.0-alpha.7"
+version = "0.1.0-alpha.8"
 description = "投标文件多文档比对校验智能体核心工程"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -13,13 +13,17 @@ dependencies = [
   "PyMuPDF>=1.24.0",
   "Pillow>=10.0.0",
   "jsonschema>=4.22.0",
-  "PyYAML>=6.0.1"
+  "PyYAML>=6.0.1",
+  "fastapi>=0.115.0",
+  "uvicorn>=0.30.0",
+  "python-multipart>=0.0.9"
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0",
-  "pytest-cov>=5.0"
+  "pytest-cov>=5.0",
+  "httpx2>=2.13.0"
 ]
 
 [tool.setuptools]

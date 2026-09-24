@@ -1,4 +1,4 @@
-# Project Baseline — v0.1.0-alpha.7
+# Project Baseline — v0.1.0-alpha.8
 
 ## 产品目标
 
@@ -28,7 +28,7 @@
 
 ## 当前已完成
 
-`v0.1.0-alpha.7 = D0 + D1 + D2 + D3 + D4 + D5 + D6 + D7 + D8 + D9 Alpha`
+`v0.1.0-alpha.8 = D0 + D1 + D2 + D3 + D4 + D5 + D6 + D7 + D8 + D9 + D10 Alpha`
 
 ```text
 DOCX/PDF
@@ -41,6 +41,7 @@ DOCX/PDF
   → 统一风险评分（适用维度重归一化 + 贡献明细）
   → Finding / Comparison / Scoring JSON
   → DOCX 反向定位与原生批注副本 + Annotation JSON
+  → FastAPI 版本化 HTTP 接口 / OpenAPI 文档
 ```
 
 ## 算法边界
@@ -52,18 +53,19 @@ DOCX/PDF
 - D8 对不适用维度重新归一化权重，文档集总风险取最高文档风险，同时保留平均分。
 - D9 当前仅写回 DOCX；PDF Finding 可以参与检测和评分，但不在 Alpha 阶段直接写入 PDF。
 - D9 依赖 Finding 中的正文段落或表格单元格 locator；无法可靠定位的项会记录跳过原因，不做猜测式批注。
+- D10 API 默认单文件上限 50 MB、每次最多 5 份，只接受 DOCX/PDF；批注接口只接受 DOCX，并始终返回新文件。
 
 ## 当前验证
 
 - `python -m compileall` 通过
-- `pytest`：30/30 通过
-- D3、D6、D7、D8、D9 输出通过对应 JSON Schema 校验
+- `pytest`：39/39 通过
+- D3、D6、D7、D8、D9 输出及 D10 错误响应通过对应 JSON Schema 校验
 - D9 输出包含有效 Word 原生批注 OOXML，并验证源文件哈希保持不变
+- D10 的 8 个版本化业务接口、健康检查、OpenAPI 和输入边界通过集成测试
 
 ## 尚未完成
 
 - D3 Embedding 语义精排（增强项）
 - D6 视觉 Embedding 精排（增强项）
-- D10 HTTP API
 - D11 端到端 Benchmark
 - H1–H4 HiAgent / 飞书配置
