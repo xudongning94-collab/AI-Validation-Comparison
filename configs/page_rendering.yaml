@@ -1,0 +1,11 @@
+page_rendering:
+  dpi: 150
+  format: png
+  docx_conversion_timeout_seconds: 120
+  # A supplied same-source PDF must meet this threshold in both directions
+  # before it can provide canonical pagination for a DOCX.
+  canonical_pdf_minimum_text_match: 0.7
+  # Keep null in Git. Set BID_COMPARE_DOCX_RENDERER to soffice.exe, or rely
+  # on PATH/standard LibreOffice installation-directory discovery.
+  docx_renderer: null
+  docx_renderer_environment_variable: BID_COMPARE_DOCX_RENDERER

@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/page_render.schema.json",
+  "title": "Document Page Render Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "source_type",
+    "source_sha256",
+    "page_count",
+    "pages",
+    "renderer",
+    "integrity",
+    "canonical_pdf",
+    "warnings",
+    "error"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.1.0"},
+    "status": {"enum": ["ok", "unavailable", "failed"]},
+    "source_type": {"enum": ["pdf", "docx"]},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "page_count": {"type": "integer", "minimum": 0},
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["page_number", "image", "image_sha256", "width", "height"],
+        "properties": {
+          "page_number": {"type": "integer", "minimum": 1},
+          "image": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{16}-page-[0-9]{4}-dpi-[0-9]+\\.png$"
+          },
+          "image_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "width": {"type": "integer", "minimum": 1},
+          "height": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "renderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "format",
+        "dpi",
+        "docx_conversion_timeout_seconds",
+        "authenticity_check"
+      ],
+      "properties": {
+        "backend": {"enum": ["pymupdf", "libreoffice+pymupdf", "canonical-pdf+pymupdf"]},
+        "format": {"const": "png"},
+        "dpi": {"type": "integer", "minimum": 72, "maximum": 600},
+        "docx_conversion_timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "authenticity_check": {"const": false}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_sha256_before",
+        "source_sha256_after",
+        "source_unchanged"
+      ],
+      "properties": {
+        "source_sha256_before": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_sha256_after": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "source_unchanged": {"type": "boolean"}
+      }
+    },
+    "canonical_pdf": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source_sha256", "page_count", "integrity", "content_match"],
+          "properties": {
+            "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "page_count": {"type": "integer", "minimum": 1},
+            "integrity": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["source_sha256_before", "source_sha256_after", "source_unchanged"],
+              "properties": {
+                "source_sha256_before": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                "source_sha256_after": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                "source_unchanged": {"type": "boolean"}
+              }
+            },
+            "content_match": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "method",
+                "shingle_size",
+                "sample_limit",
+                "minimum_bidirectional_match",
+                "docx_to_pdf",
+                "pdf_to_docx",
+                "matched"
+              ],
+              "properties": {
+                "method": {"const": "normalized-alphanumeric-shingle-v1"},
+                "shingle_size": {"const": 64},
+                "sample_limit": {"const": 300},
+                "minimum_bidirectional_match": {"type": "number", "minimum": 0, "maximum": 1},
+                "docx_to_pdf": {"$ref": "#/$defs/match_metrics"},
+                "pdf_to_docx": {"$ref": "#/$defs/match_metrics"},
+                "matched": {"type": "boolean"}
+              }
+            }
+          }
+        }
+      ]
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "message": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "error": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message"],
+          "properties": {
+            "code": {"type": "string", "minLength": 1},
+            "message": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "match_metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_count", "matched_count", "match_rate"],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 0, "maximum": 300},
+        "matched_count": {"type": "integer", "minimum": 0, "maximum": 300},
+        "match_rate": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    }
+  }
+}

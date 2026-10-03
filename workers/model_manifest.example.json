@@ -1,0 +1,37 @@
+{
+  "schema_version": "2.0.0",
+  "models": [
+    {
+      "id": "paddleocr-detection-model",
+      "kind": "detection",
+      "model_name": "PP-OCRv5_server_det",
+      "relative_directory": "detection",
+      "files": [
+        {
+          "relative_path": "inference.json",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "relative_path": "inference.pdiparams",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+    },
+    {
+      "id": "paddleocr-recognition-model",
+      "kind": "recognition",
+      "model_name": "PP-OCRv5_server_rec",
+      "relative_directory": "recognition",
+      "files": [
+        {
+          "relative_path": "inference.json",
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        {
+          "relative_path": "inference.pdiparams",
+          "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ]
+    }
+  ]
+}

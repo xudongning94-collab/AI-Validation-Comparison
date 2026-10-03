@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/ocr_worker_result.schema.json",
+  "title": "Isolated OCR Worker Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "engine", "status", "page_number", "image_sha256",
+    "items", "count", "error", "requested_profile", "selected_profile",
+    "selected_models", "metadata"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "engine": {"const": "paddleocr"},
+    "status": {"enum": ["ok", "failed", "disabled"]},
+    "page_number": {"type": "integer", "minimum": 1},
+    "image_sha256": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "confidence", "polygon", "bbox"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "text": {"type": "string", "minLength": 1},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "polygon": {
+            "type": "array",
+            "minItems": 4,
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {"type": "number", "minimum": 0},
+                {"type": "number", "minimum": 0}
+              ],
+              "items": false
+            }
+          },
+          "bbox": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x", "y", "w", "h"],
+            "properties": {
+              "x": {"type": "number", "minimum": 0},
+              "y": {"type": "number", "minimum": 0},
+              "w": {"type": "number", "exclusiveMinimum": 0},
+              "h": {"type": "number", "exclusiveMinimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "count": {"type": "integer", "minimum": 0},
+    "error": {"type": ["string", "null"]},
+    "requested_profile": {"const": "offline-cpu"},
+    "selected_profile": {"type": ["string", "null"]},
+    "selected_models": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "offline_only", "implicit_model_downloads"],
+      "properties": {
+        "method": {"const": "paddleocr-offline-v1"},
+        "offline_only": {"const": true},
+        "implicit_model_downloads": {"const": false}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "ok"}}},
+      "then": {
+        "properties": {
+          "image_sha256": {"type": "string"},
+          "error": {"type": "null"},
+          "selected_profile": {"type": "string"},
+          "selected_models": {"required": ["detection", "recognition"]}
+        }
+      },
+      "else": {
+        "properties": {
+          "items": {"maxItems": 0},
+          "count": {"const": 0},
+          "error": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  ]
+}

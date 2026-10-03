@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/signature_field_locator.schema.json",
+  "title": "SignatureFieldLocatorResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "status", "page_number", "canvas", "fields", "count",
+    "requires_human_review", "error", "metadata"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "status": {"const": "ok"},
+    "page_number": {"type": "integer", "minimum": 1},
+    "canvas": {"$ref": "#/$defs/canvas"},
+    "fields": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/field"}
+    },
+    "count": {"type": "integer", "minimum": 0},
+    "requires_human_review": {"type": "boolean"},
+    "error": {"type": "null"},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "minimum_confidence", "handwritten_presence_evaluated"],
+      "properties": {
+        "method": {"const": "signature-field-semantic-layout-v1"},
+        "minimum_confidence": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "handwritten_presence_evaluated": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "canvas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {"type": "number", "exclusiveMinimum": 0},
+        "height": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "bbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": {"type": "number", "minimum": 0},
+        "y": {"type": "number", "minimum": 0},
+        "w": {"type": "number", "exclusiveMinimum": 0},
+        "h": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field_id", "kind", "page_number", "anchor_bbox", "signature_roi",
+        "confidence", "cues", "evidence_ids", "field_status", "handwritten_status"
+      ],
+      "properties": {
+        "field_id": {"type": "string", "minLength": 1},
+        "kind": {"const": "signature_field"},
+        "page_number": {"type": "integer", "minimum": 1},
+        "anchor_bbox": {"$ref": "#/$defs/bbox"},
+        "signature_roi": {"$ref": "#/$defs/bbox"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "cues": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["role_signature_anchor", "company_seal", "date"]}
+        },
+        "evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "field_status": {"const": "candidate"},
+        "handwritten_status": {"const": "not_evaluated"}
+      }
+    }
+  }
+}

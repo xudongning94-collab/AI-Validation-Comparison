@@ -1,6 +1,7 @@
 .venv/
 .tools/
 .pytest-tmp/
+.pytest-tmp*/
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -12,6 +13,10 @@ dist/
 output/*.json
 !output/.gitkeep
 output/benchmark/
+output/signature-calibration/
+output/page-render/
 benchmarks/local/
+benchmarks/signature/local/
+workers/models/
 data/
 .DS_Store

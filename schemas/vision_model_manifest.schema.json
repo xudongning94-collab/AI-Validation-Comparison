@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/vision_model_manifest.schema.json",
+  "title": "Offline Vision Model Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "models"],
+  "properties": {
+    "schema_version": {"const": "2.0.0"},
+    "models": {
+      "type": "array",
+      "minItems": 2,
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {"kind": {"const": "detection"}}
+          },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {"kind": {"const": "recognition"}}
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "model_name", "relative_directory", "files"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["detection", "recognition", "classification"]},
+          "model_name": {"type": "string", "minLength": 1},
+          "relative_directory": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+          },
+          "files": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["relative_path", "sha256"],
+              "properties": {
+                "relative_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+                },
+                "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

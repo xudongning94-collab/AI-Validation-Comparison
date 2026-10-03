@@ -15,6 +15,10 @@ from pathlib import Path
 from typing import Any
 
 
+DEFAULT_SEAL_PREFERRED_MIN_DIMENSION_RATIO = 0.06
+DEFAULT_SEAL_PREFERRED_MAX_AREA_RATIO = 0.04
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -28,6 +32,14 @@ def _safe_sha256(path: Path) -> str | None:
         return _sha256(path)
     except OSError:
         return None
+
+
+def _read_image(image_path: Path) -> Any:
+    import cv2  # type: ignore
+    import numpy as np  # type: ignore
+
+    encoded = np.frombuffer(image_path.read_bytes(), dtype=np.uint8)
+    return cv2.imdecode(encoded, cv2.IMREAD_COLOR)
 
 
 def _quality_flags(
@@ -49,7 +61,164 @@ def _quality_flags(
     return flags
 
 
-def _seal_candidates(image: Any, page_number: int) -> list[dict[str, Any]]:
+def _boxes_are_near(
+    left: dict[str, float],
+    right: dict[str, float],
+    *,
+    gap: float,
+) -> bool:
+    left_x2 = left["x"] + left["w"]
+    left_y2 = left["y"] + left["h"]
+    right_x2 = right["x"] + right["w"]
+    right_y2 = right["y"] + right["h"]
+    return not (
+        left_x2 + gap < right["x"]
+        or right_x2 + gap < left["x"]
+        or left_y2 + gap < right["y"]
+        or right_y2 + gap < left["y"]
+    )
+
+
+def _consolidate_seal_candidates(
+    candidates: list[dict[str, Any]],
+    *,
+    page_number: int,
+    width: int,
+    height: int,
+    preferred_min_dimension_ratio: float = DEFAULT_SEAL_PREFERRED_MIN_DIMENSION_RATIO,
+    preferred_max_area_ratio: float = DEFAULT_SEAL_PREFERRED_MAX_AREA_RATIO,
+) -> list[dict[str, Any]]:
+    merge_gap = max(12.0, min(width, height) * 0.022)
+    grouped: list[list[dict[str, Any]]] = []
+    remaining = sorted(
+        (
+            candidate
+            for candidate in candidates
+            if min(
+                float(candidate["bbox"]["w"]),
+                float(candidate["bbox"]["h"]),
+            )
+            / max(
+                float(candidate["bbox"]["w"]),
+                float(candidate["bbox"]["h"]),
+            )
+            >= 0.28
+        ),
+        key=lambda item: (
+            str(item.get("features", {}).get("color") or ""),
+            float(item["bbox"]["y"]),
+            float(item["bbox"]["x"]),
+        ),
+    )
+    while remaining:
+        group = [remaining.pop(0)]
+        changed = True
+        while changed:
+            changed = False
+            for candidate in list(remaining):
+                color = candidate.get("features", {}).get("color")
+                if color != group[0].get("features", {}).get("color"):
+                    continue
+                if any(
+                    _boxes_are_near(candidate["bbox"], member["bbox"], gap=merge_gap)
+                    for member in group
+                ):
+                    group.append(candidate)
+                    remaining.remove(candidate)
+                    changed = True
+        grouped.append(group)
+
+    consolidated: list[dict[str, Any]] = []
+    for group in grouped:
+        x1 = min(float(item["bbox"]["x"]) for item in group)
+        y1 = min(float(item["bbox"]["y"]) for item in group)
+        x2 = max(float(item["bbox"]["x"] + item["bbox"]["w"]) for item in group)
+        y2 = max(float(item["bbox"]["y"] + item["bbox"]["h"]) for item in group)
+        w = x2 - x1
+        h = y2 - y1
+        aspect = min(w, h) / max(w, h)
+        if aspect < 0.28:
+            continue
+        color = str(group[0].get("features", {}).get("color") or "unknown")
+        area = sum(float(item.get("features", {}).get("area") or 0.0) for item in group)
+        fill_ratio = min(1.0, area / max(1.0, w * h))
+        min_dimension_ratio = min(w, h) / max(1.0, min(width, height))
+        bbox_area_ratio = (w * h) / max(1.0, width * height)
+        small_candidate_factor = min(
+            1.0,
+            min_dimension_ratio / preferred_min_dimension_ratio,
+        )
+        large_candidate_factor = min(
+            1.0,
+            preferred_max_area_ratio / max(bbox_area_ratio, 1e-9),
+        )
+        scale_confidence_factor = min(
+            small_candidate_factor,
+            large_candidate_factor,
+        )
+        confidence = (
+            max(float(item["confidence"]) for item in group)
+            * scale_confidence_factor
+        )
+        circularity = max(
+            float(item.get("features", {}).get("circularity") or 0.0)
+            for item in group
+        )
+        consolidated.append(
+            {
+                "candidate_id": "",
+                "kind": "seal",
+                "page_number": page_number,
+                "bbox": {"x": x1, "y": y1, "w": w, "h": h},
+                "confidence": round(confidence, 4),
+                "recognized_text": None,
+                "quality_flags": _quality_flags(
+                    int(x1),
+                    int(y1),
+                    int(w),
+                    int(h),
+                    width,
+                    height,
+                    fill_ratio=fill_ratio,
+                ),
+                "detector": f"opencv-hsv-{color}-component-cluster-v3",
+                "features": {
+                    "color": color,
+                    "area": round(area, 2),
+                    "aspect": round(aspect, 4),
+                    "circularity": round(circularity, 4),
+                    "fill_ratio": round(fill_ratio, 4),
+                    "component_count": len(group),
+                    "min_dimension_ratio": round(min_dimension_ratio, 4),
+                    "bbox_area_ratio": round(bbox_area_ratio, 4),
+                    "scale_confidence_factor": round(scale_confidence_factor, 4),
+                    "preferred_min_dimension_ratio": preferred_min_dimension_ratio,
+                    "preferred_max_area_ratio": preferred_max_area_ratio,
+                },
+            }
+        )
+
+    consolidated.sort(
+        key=lambda item: (
+            item["features"]["color"],
+            item["bbox"]["y"],
+            item["bbox"]["x"],
+        )
+    )
+    for index, candidate in enumerate(consolidated):
+        candidate["candidate_id"] = (
+            f"seal-{page_number}-{candidate['features']['color']}-{index:04d}"
+        )
+    return consolidated
+
+
+def _seal_candidates(
+    image: Any,
+    page_number: int,
+    *,
+    preferred_min_dimension_ratio: float = DEFAULT_SEAL_PREFERRED_MIN_DIMENSION_RATIO,
+    preferred_max_area_ratio: float = DEFAULT_SEAL_PREFERRED_MAX_AREA_RATIO,
+) -> list[dict[str, Any]]:
     import cv2  # type: ignore
     import numpy as np  # type: ignore
 
@@ -125,7 +294,14 @@ def _seal_candidates(image: Any, page_number: int) -> list[dict[str, Any]]:
                     },
                 }
             )
-    return candidates
+    return _consolidate_seal_candidates(
+        candidates,
+        page_number=page_number,
+        width=width,
+        height=height,
+        preferred_min_dimension_ratio=preferred_min_dimension_ratio,
+        preferred_max_area_ratio=preferred_max_area_ratio,
+    )
 
 
 def _signature_candidate(
@@ -202,6 +378,8 @@ def detect_candidates(
     *,
     page_number: int,
     signature_rois: list[tuple[int, int, int, int]],
+    seal_preferred_min_dimension_ratio: float = DEFAULT_SEAL_PREFERRED_MIN_DIMENSION_RATIO,
+    seal_preferred_max_area_ratio: float = DEFAULT_SEAL_PREFERRED_MAX_AREA_RATIO,
 ) -> dict[str, Any]:
     try:
         import cv2  # type: ignore
@@ -224,11 +402,16 @@ def detect_candidates(
         }
 
     try:
-        image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+        image = _read_image(image_path)
         if image is None:
-            raise ValueError(f"cannot read image: {image_path}")
+            raise ValueError("cannot read image")
         height, width = image.shape[:2]
-        candidates = _seal_candidates(image, page_number)
+        candidates = _seal_candidates(
+            image,
+            page_number,
+            preferred_min_dimension_ratio=seal_preferred_min_dimension_ratio,
+            preferred_max_area_ratio=seal_preferred_max_area_ratio,
+        )
         for index, roi in enumerate(signature_rois):
             candidate = _signature_candidate(image, page_number, roi, index)
             if candidate is not None:
@@ -284,15 +467,31 @@ def main() -> int:
     parser.add_argument("image", type=Path)
     parser.add_argument("--page", type=int, default=1)
     parser.add_argument("--signature-roi", action="append", type=_parse_roi, default=[])
+    parser.add_argument(
+        "--seal-preferred-min-dimension-ratio",
+        type=float,
+        default=DEFAULT_SEAL_PREFERRED_MIN_DIMENSION_RATIO,
+    )
+    parser.add_argument(
+        "--seal-preferred-max-area-ratio",
+        type=float,
+        default=DEFAULT_SEAL_PREFERRED_MAX_AREA_RATIO,
+    )
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if args.page < 1:
         parser.error("--page must be >= 1")
+    if not 0 < args.seal_preferred_min_dimension_ratio <= 1:
+        parser.error("--seal-preferred-min-dimension-ratio must be in (0, 1]")
+    if not 0 < args.seal_preferred_max_area_ratio <= 1:
+        parser.error("--seal-preferred-max-area-ratio must be in (0, 1]")
 
     result = detect_candidates(
         args.image,
         page_number=args.page,
         signature_rois=args.signature_roi,
+        seal_preferred_min_dimension_ratio=args.seal_preferred_min_dimension_ratio,
+        seal_preferred_max_area_ratio=args.seal_preferred_max_area_ratio,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -1,0 +1,14 @@
+vision_worker:
+  # Keep null in Git. Set BID_COMPARE_VISION_PYTHON to the isolated CPython
+  # 3.12 executable, or use an untracked local override config.
+  python_executable: null
+  python_environment_variable: BID_COMPARE_VISION_PYTHON
+  offline_model_directory: null
+  offline_model_directory_environment_variable: BID_COMPARE_PADDLEOCR_MODEL_DIR
+  required_python: "3.12"
+  health_timeout_seconds: 20
+  task_timeout_seconds: 120
+  # Scale anchors affect candidate confidence only; candidates remain available
+  # to lower calibration thresholds instead of being hard-filtered.
+  seal_preferred_min_dimension_ratio: 0.06
+  seal_preferred_max_area_ratio: 0.04

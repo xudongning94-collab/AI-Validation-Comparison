@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.1.0",
+  "calibration_id": "replace-with-local-dataset-id",
+  "privacy": {
+    "include_source_paths": false
+  },
+  "samples": [
+    {
+      "id": "calibration-positive-001",
+      "document_group_id": "calibration-document-001",
+      "split": "calibration",
+      "image": "signature/local/calibration-positive-001.png",
+      "page_number": 1,
+      "signature_rois": [[100, 1100, 900, 350]],
+      "annotations": [
+        {
+          "id": "annotation-signature-001",
+          "kind": "signature",
+          "bbox": {"x": 220, "y": 1180, "w": 260, "h": 120},
+          "ignore": false
+        },
+        {
+          "id": "annotation-seal-001",
+          "kind": "seal",
+          "bbox": {"x": 680, "y": 1060, "w": 240, "h": 240},
+          "ignore": false
+        }
+      ]
+    },
+    {
+      "id": "calibration-negative-001",
+      "document_group_id": "calibration-document-001",
+      "split": "calibration",
+      "image": "signature/local/calibration-negative-001.png",
+      "page_number": 2,
+      "signature_rois": [[100, 1100, 900, 350]],
+      "annotations": []
+    },
+    {
+      "id": "validation-positive-001",
+      "document_group_id": "validation-document-001",
+      "split": "validation",
+      "image": "signature/local/validation-positive-001.png",
+      "page_number": 3,
+      "signature_rois": [[100, 1100, 900, 350]],
+      "annotations": [
+        {
+          "id": "annotation-signature-002",
+          "kind": "signature",
+          "bbox": {"x": 210, "y": 1170, "w": 270, "h": 125},
+          "ignore": false
+        },
+        {
+          "id": "annotation-seal-002",
+          "kind": "seal",
+          "bbox": {"x": 675, "y": 1055, "w": 245, "h": 245},
+          "ignore": false
+        }
+      ]
+    }
+  ]
+}

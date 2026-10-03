@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/vision_worker_health.schema.json",
+  "title": "Vision Worker Runtime Health",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "required_python",
+    "python_version",
+    "python_compatible",
+    "capabilities",
+    "dependencies",
+    "offline_models",
+    "error"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "status": {"enum": ["ready", "degraded", "unavailable", "failed"]},
+    "required_python": {"const": "3.12"},
+    "python_version": {
+      "oneOf": [
+        {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        {"type": "null"}
+      ]
+    },
+    "python_compatible": {"type": "boolean"},
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signature_candidates", "ocr", "authenticity_check"],
+      "properties": {
+        "signature_candidates": {"type": "boolean"},
+        "ocr": {"type": "boolean"},
+        "authenticity_check": {"const": false}
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["opencv", "numpy", "paddleocr", "paddlepaddle"],
+      "properties": {
+        "opencv": {"$ref": "#/$defs/dependency"},
+        "numpy": {"$ref": "#/$defs/dependency"},
+        "paddleocr": {"$ref": "#/$defs/dependency"},
+        "paddlepaddle": {"$ref": "#/$defs/dependency"}
+      }
+    },
+    "offline_models": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configured", "manifest_valid", "model_count"],
+      "properties": {
+        "configured": {"type": "boolean"},
+        "manifest_valid": {"type": "boolean"},
+        "model_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "error": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message"],
+          "properties": {
+            "code": {"type": "string", "minLength": 1},
+            "message": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "dependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "version"],
+      "properties": {
+        "available": {"type": "boolean"},
+        "version": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

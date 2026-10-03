@@ -1,0 +1,10 @@
+signature_field_locator:
+  # A field candidate requires a role/signature anchor plus local form cues.
+  # These ratios are relative to the rendered page canvas.
+  minimum_confidence: 0.80
+  maximum_same_line_gap_ratio: 0.04
+  maximum_context_vertical_distance_ratio: 0.09
+  maximum_context_horizontal_offset_ratio: 0.18
+  roi_right_margin_ratio: 0.05
+  roi_minimum_height_ratio: 0.035
+  roi_maximum_height_ratio: 0.08

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-10-03T00:00:00+08:00",
+  "project": {
+    "name": "AI-Validation-Comparison",
+    "repository_directory": "bid-compare-agent",
+    "version": "0.1.0-alpha.12"
+  },
+  "recovery": {
+    "authoritative_handoff": "CURRENT_PROGRESS_HANDOFF.md",
+    "startup_guide": "AGENTS.md",
+    "restore_script": "scripts/restore_context.ps1",
+    "history_source": "repository_checkpoint",
+    "checkpoint_id": "d13.3-recovery-contract-v2",
+    "historical_origin_thread_id": "01a0cd3c-1267-7101-9b52-0c63eb4df8c7",
+    "thread_history_authoritative": false
+  },
+  "git": {
+    "baseline_commit": "7afbee3209b0770d21a813eaa4d2b956f3f925b3",
+    "allowed_checkpoint_branches": [
+      "codex/d13-3-calibration-checkpoint",
+      "main"
+    ],
+    "remote_integration_policy": "fetch origin, branch from origin/main, then cherry-pick the local checkpoint; never force-push main"
+  },
+  "phase": {
+    "id": "D13.3",
+    "status": "in_progress",
+    "completed_scope": "candidate calibration with document-group leakage protection, seal-component clustering, elongated-artifact prefiltering and scale-aware color-artifact confidence suppression, privacy-safe PDF/DOCX rendering, bidirectional same-source canonical-PDF verification and fallback, reproducible Python 3.12 vision-worker bootstrap, verified CV/OCR dependencies, strict all-file offline model integrity, official PP-OCRv5 model staging, real end-to-end PaddleOCR subprocess/client smoke tests on synthetic and local business signing pages, Unicode-safe OpenCV image decoding, one reproducible local single-document seal calibration-only run, a real legacy-DOC pagination diagnostic that preserved 341 reference pages while rejecting a 426-page derived DOCX as native-DOCX validation evidence, an independent native business DOCX preflight and verified 204-page canonical-PDF seal scan, two additional independent PDF validation groups totaling 393 rendered pages with privacy-safe seal-candidate scans, import and analysis of 189 human-reviewed seal candidates with 129 true-seal and 60 false-positive labels, and a geometry-preserving semantic signature-field locator that separates required-field presence from handwritten-ink presence; the legacy 25-page Moling keyword shortlist was reduced to page 8, where a required signature field is present but handwriting is absent",
+    "next_gate": "freeze reviewed seal truth with a full-page missed-seal audit, review independently confirmed handwritten-signature pages using the two-stage field/handwriting workflow, build document-group-separated calibration and validation truth, run independent validation without retuning, and expand canonical-PDF compatibility evidence across additional WPS/Word documents"
+  },
+  "product": {
+    "maturity": "alpha",
+    "development_complete": false,
+    "production_released": false
+  },
+  "verification": {
+    "last_verified_at": "2026-10-03",
+    "python": ".tools/python313/python.exe",
+    "expected_passed_tests": 129,
+    "commands": [
+      ".tools/python313/python.exe -m compileall -q src scripts tests workers",
+      ".tools/python313/python.exe -m pytest --basetemp .pytest-tmp",
+      "git diff --check",
+      "git diff --cached --check"
+    ]
+  },
+  "next_actions": [
+    "complete a full-page missed-seal audit for the Moling group because the 129 true-seal and 60 false-positive labels establish candidate precision evidence but not recall",
+    "review the independent Guangzhou PDF group with the two-stage signature-field and handwritten-ink workflow and freeze confirmed handwritten positives",
+    "convert reviewed seal and handwritten-signature decisions into document-group-separated calibration and validation truth",
+    "run calibration and independent validation without retuning on validation results until the report status is validated",
+    "expand the canonical-PDF fallback regression set across additional WPS/Word documents",
+    "lock reviewed thresholds and publish regression evidence"
+  ]
+}

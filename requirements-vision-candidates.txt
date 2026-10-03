@@ -1,0 +1,4 @@
+# Minimal isolated runtime for signature/seal candidate detection.
+# Use CPython 3.12; do not install into the main API environment.
+opencv-contrib-python==4.10.0.84
+numpy>=1.26,<3

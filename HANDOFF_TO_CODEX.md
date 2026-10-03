@@ -1,13 +1,15 @@
 # HANDOFF TO CODEX
 
+> 历史交接背景。当前状态不得从本文件单独推断；请先读取 `PROJECT_STATE.json` 和 `CURRENT_PROGRESS_HANDOFF.md`，并运行 `scripts/restore_context.ps1`。
+
 ## 当前基线
 
 - 当前版本：`v0.1.0-alpha.12`
-- 已完成：D0–D12 Alpha + D13.1–D13.2 规则/候选检测 Alpha + H1–H4 本地接入包 Alpha
-- 自动化测试：81/81 通过
+- 已完成：D0–D12 Alpha + D13.1–D13.2 规则/候选检测 Alpha + D13.3 校准基础设施 + H1–H4 本地接入包 Alpha
+- 自动化测试：当前期望数量以 `PROJECT_STATE.json` 为准
 - 架构原则：Codex 重开发、HiAgent 轻配置
 
-本地工程由 `bid-compare-agent_v0.1.0-alpha.4.zip` 恢复。恢复包没有 `.git`，因此无法在当前环境核验原交接提交 `ac3ad5086c296a1560764ff98920a97b809368bb`；但恢复包版本、D0–D6 文档与 15 个原始测试一致。在此基础上完成 D7–D12、D13.1–D13.2 和 H1–H4 本地接入包，并将自动化测试扩充至 81 项。
+本地工程由 `bid-compare-agent_v0.1.0-alpha.4.zip` 恢复。恢复包没有 `.git`，因此无法在当前环境核验原交接提交 `ac3ad5086c296a1560764ff98920a97b809368bb`；但恢复包版本、D0–D6 文档与 15 个原始测试一致。在此基础上完成 D7–D12、D13.1–D13.2、D13.3 校准基础设施和 H1–H4 本地接入包。测试总数属于动态状态，不再在本历史文件维护。
 
 ## 已完成能力
 
@@ -25,6 +27,7 @@
 - D11：隐私保护端到端 Benchmark Alpha
 - D12：聚合分析、本地确定性报告、任务持久化、API Key 鉴权、哈希链审计与 OCR 证据契约基础
 - D13.1–D13.2：签署规则、证据状态、合规 API 与 OpenCV 签字/印章候选检测
+- D13.3（基础设施）：本地标注 manifest、calibration/validation 切分、IoU 匹配、阈值扫描与隐私保护统计
 - H1：HiAgent API 契约与 OpenAPI 快照
 - H2：工作流节点、分支、重试与隐私策略
 - H3：结构化报告 Prompt、Schema 与示例
@@ -85,6 +88,16 @@
 - 边界：只能做存在性、一致性、位置和明显异常核对，不能鉴定签名或印章真伪
 - 待办：DOCX/PDF 页面渲染、PaddleOCR worker、离线模型权重和真实样本 D13.3 校准
 
+## D13.3 校准基础设施说明
+
+- 清单：`benchmarks/signature_calibration_manifest.example.json`；真实图片与本地 manifest 放入忽略目录 `benchmarks/signature/local/`
+- 配置：`configs/signature_calibration.yaml`，包含 IoU、最低召回率、候选置信度扫描点和必需候选类型
+- 入口：`scripts/calibrate_signature_candidates.py`
+- 输出：`schemas/signature_calibration.schema.json`，分别记录签字/印章 TP、FP、FN、precision、recall、F1、false discovery rate、miss rate 和负样本页误报率
+- 选择：仅在 calibration 子集按召回率下限约束下最大化 F1；推荐阈值在 validation 子集上不再调参
+- 隐私：报告不含源路径、文件名、原图或正文，仅保留样本 ID、输入 SHA-256 和聚合指标
+- 状态：未提供独立 validation 真值时固定输出 `calibration_only`；当前尚无可发布的真实标注统计，不得宣称 D13.3 完成
+
 ## D11 说明
 
 - 输入：本地 manifest，明确 tender_reference / response_old / response_new / response 角色
@@ -108,7 +121,7 @@
 
 ## 后续路线
 
-1. D13.3 使用真实签署页样本标注并校准误报/漏报
+1. D13.3 将真实签署页人工标注导入现有校准流水线，完成独立验证集误报/漏报统计
 2. 完成页面渲染和 PaddleOCR 独立 worker，封装离线模型权重
 3. 获取 HiAgent 工作区、飞书测试机器人、测试会话和受控 HTTPS API 地址
 4. 扩充人工标注样本集，持续校准误报/漏报率

@@ -1,5 +1,52 @@
 # Changelog
 
+## Unreleased — D13.3 签字签章候选校准基础设施
+
+- 修复签字页筛选把页面级宽泛关键词误当成手写签名证据的问题：新增保留 OCR 几何的局部语义签字字段定位器、配置、Schema、CLI 和 6 项测试，并将“字段存在”与“手写墨迹存在”拆分；秣陵旧版 25 页候选重扫后只保留第 8 页，该页字段存在但手写缺失
+- 导入秣陵人工审核：189 个印章候选标注为 129 个真印章、60 个误报；24 个已审核旧版签名页全部无手写。印章审核未逐页标记漏检，只作为候选精确率证据，不报告召回率
+- 新增两组独立真实 PDF 验证素材预检：共 393 页全部完成隐私保护渲染与候选扫描，累计 504 个印章候选（214 个达到当前 0.75 阈值）；广州组含视觉确认的手写候选页面，仍需二阶段人工审核后冻结
+- 页面渲染 Schema 升级至 v1.1，新增 `--canonical-pdf`：以规范化 64 字符分片做双向同源校验，通过门槛后使用权威 PDF 分页并记录双源 SHA-256、匹配率和显式 warning；不同源 PDF 失败且不发布页面
+- 真实 WPS DOCX/PDF 配对回归确认 LibreOffice 261 页对权威 PDF 204 页的分页不兼容；新回退在真实文件上以 0.76/0.76 双向匹配通过 0.7 门槛并输出 204 页，新增 2 项集成测试，自动化测试由 121 项增加至 123 项
+- 恢复契约升级为 repository-checkpoint v2：不再把历史 Codex 线程 ID 当作恢复入口，新增逻辑检查点 ID、权威来源校验，并在恢复摘要中输出完整完成范围和下一步动作，避免侧边栏索引与旧线程正文不一致时误恢复旧进度
+- 校准 manifest 升级至 v1.1：每个样本必须声明 `document_group_id`，同一源文档及派生页禁止跨 calibration/validation，报告增加文档组计数
+- OpenCV 候选 worker 改为字节读取和内存解码，修复 Windows 中文绝对路径图片无法读取的问题
+- 完成首个 Git 忽略的真实单文档 calibration-only 运行：21 页、16 个印章真值、10 个负/困难样本页；结果暴露碎片化印章漏检和非印章彩色元素误报，未达到 0.85 最低召回率
+- 新增 3 项文档组防泄漏与 Unicode 路径回归测试，自动化测试由 114 项增加至 117 项
+- 新增同色近邻印章组件聚类、聚类前细长边框/彩条过滤及 3 项回归测试；单文档 calibration 在阈值 0.75 的召回由 0.50 提升至 0.875，但精确率仍仅 0.203，自动化测试由 117 项增加至 120 项
+- 聚类候选新增可配置的相对页面尺度置信度因子，配置由 `vision_worker.yaml` 经客户端传入隔离子进程；保留低阈值候选并抑制过小图标与超大彩色版块，同一单文档 calibration 在阈值 0.75 下保持 TP=14、FN=2，FP 从 55 降至 23，精确率由 0.203 提升至 0.378，F1 由 0.329 提升至 0.528，负样本页误报率由 0.60 降至 0.30；新增 1 项回归测试，自动化测试由 120 项增加至 121 项
+- 新增严格的目录级离线模型 manifest v2：拒绝越界、符号链接和未声明文件，并逐文件校验 SHA-256
+- 新增 `scripts/build_vision_model_manifest.py` 与必须显式传入 `--allow-network` 的官方模型暂存脚本；生产 worker 不执行隐式下载
+- 新增实际 `run_paddleocr.py` 隔离子进程、原始输出 Schema 与 `VisionWorkerClient.ocr_page()`，强制关闭三个额外模型模块并保留低置信度人工复核
+- 新增 7 项模型目录、worker、暂存门禁与客户端集成测试，自动化测试由 104 项增加至 111 项
+- 官方 PP-OCRv5 server 检测/识别模型已显式暂存并通过完整健康检查；真实中文合成页由 worker 与客户端端到端识别 2 行文字，置信度均约 0.997
+- 修复模型暂存目录的 Windows ACL 继承、Paddle 3.3.1 oneDNN/PIR 不兼容、Unicode 绝对模型路径和 NumPy 多边形后处理问题
+- 新增 3 项暂存发布、缺失父目录和 ASCII 路径回归测试，自动化测试由 111 项增加至 114 项
+- 新增 `requirements-vision-candidates.txt` 与 `scripts/bootstrap_vision_worker.ps1`，分离候选检测/完整 OCR 依赖并支持显式联网或 `--no-index` wheelhouse 安装
+- 本机隔离 Python 3.12.10 已安装固定 CV/OCR 依赖；`pip check`、真实模块导入与合成签字/印章候选子进程回归通过
+- 固定 Windows 运行时可导入的 `ujson==5.11.0`，避免 PaddleX 因 `ujson 6.0.0` DLL load failure 降级
+- DOCX renderer 新增环境变量和 Windows 标准 LibreOffice 路径发现，合成两页 DOCX 已真实渲染为 2 张 PNG
+- LibreOffice 子进程输出固定 UTF-8 安全解码，避免 Windows 默认 GBK 触发后台 `UnicodeDecodeError`
+- 新增 5 项 bootstrap/依赖拆分/renderer 发现与解码契约测试，自动化测试由 99 项增加至 104 项
+- 新增隔离视觉 worker 健康检查，核验 Python 3.12、OpenCV、NumPy、PaddleOCR 与 PaddlePaddle 能力
+- 新增 `VisionWorkerClient` 子进程边界、超时、无效输出处理与隐私安全的 unavailable/failed 降级
+- 校准 CLI 改为读取 `configs/vision_worker.yaml` 和 `BID_COMPARE_VISION_PYTHON`，禁止把 OpenCV worker 导入主 Python
+- 新增离线模型 manifest、相对路径限制和 SHA-256 完整性门禁；OCR 仅在依赖与模型同时就绪时可用
+- 新增 `scripts/check_vision_worker.py`、健康 Schema 及 7 项运行时/模型契约测试，自动化测试由 92 项增加至 99 项
+- 新增 PyMuPDF PDF 逐页 RGB PNG 渲染、哈希命名、源文件完整性复核和隐私保护结果 Schema
+- 新增隔离 LibreOffice 用户配置的 DOCX 临时 PDF 转换契约、超时与明确的 `unavailable`/`failed` 状态
+- 新增 `scripts/render_document_pages.py`、`configs/page_rendering.yaml` 及 PDF/DOCX 页面渲染集成测试
+- 页面渲染测试使自动化测试由 89 项增加至 92 项
+- 新增 `PROJECT_STATE.json` 单一机器状态源、仓库级 `AGENTS.md`、恢复脚本和状态一致性检查
+- 新增父目录恢复定位入口，避免把容器目录的空 Git 仓库误认为产品仓库
+- 新增仓库目录/父目录双入口恢复契约测试，自动化测试由 87 项增加至 89 项
+- 新增隐私保护的本地签署页标注 manifest、calibration/validation 数据切分和示例
+- 新增签字/印章候选 IoU 一一匹配、置信度阈值扫描与召回率下限约束的 F1 阈值选择
+- 新增 TP/FP/FN、精确率、召回率、F1、误报占比、漏报率与负样本页误报率统计
+- 新增校准配置、结果 Schema 与 `scripts/calibrate_signature_candidates.py` CLI
+- 校准报告强制不含源路径、文件名、原图或正文，并复核运行前后输入 SHA-256 不变
+- 缺少独立 validation 真值时明确输出 `calibration_only`，不把合成回归或训练集指标冒充真实验证结果
+- 自动化测试由 81 项增加至 87 项
+
 ## 0.1.0-alpha.12 — D13.1–D13.2 签字签章合规检查 Alpha
 
 - 新增确定性签署规则引擎，覆盖签字、签章、主体名称、签署人、日期、页码和位置锚点

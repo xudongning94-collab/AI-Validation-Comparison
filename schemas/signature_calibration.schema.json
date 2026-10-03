@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/signature_calibration.schema.json",
+  "title": "SignatureCandidateCalibrationResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "calibration_type", "calibration_id", "status", "privacy",
+    "dataset", "configuration", "threshold_sweep", "recommended_thresholds",
+    "calibration_metrics", "validation_metrics", "integrity", "limitations", "metadata"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "calibration_type": {"const": "signature_candidate_thresholds"},
+    "calibration_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["calibration_only", "validated"]},
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_paths_included", "source_files_embedded", "raw_images_embedded",
+        "sample_hashes_included"
+      ],
+      "properties": {
+        "source_paths_included": {"const": false},
+        "source_files_embedded": {"const": false},
+        "raw_images_embedded": {"const": false},
+        "sample_hashes_included": {"const": true}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_count", "calibration_sample_count", "validation_sample_count",
+        "document_group_count", "calibration_document_group_count",
+        "validation_document_group_count", "samples"
+      ],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 1},
+        "calibration_sample_count": {"type": "integer", "minimum": 1},
+        "validation_sample_count": {"type": "integer", "minimum": 0},
+        "document_group_count": {"type": "integer", "minimum": 1},
+        "calibration_document_group_count": {"type": "integer", "minimum": 1},
+        "validation_document_group_count": {"type": "integer", "minimum": 0},
+        "samples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id", "split", "page_number", "image_sha256",
+              "annotation_counts", "raw_candidate_counts"
+            ],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "split": {"enum": ["calibration", "validation"]},
+              "page_number": {"type": "integer", "minimum": 1},
+              "image_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "annotation_counts": {"$ref": "#/$defs/kindCounts"},
+              "raw_candidate_counts": {"$ref": "#/$defs/kindCounts"}
+            }
+          }
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "iou_threshold", "minimum_recall", "confidence_thresholds", "required_kinds"
+      ],
+      "properties": {
+        "iou_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "minimum_recall": {"type": "number", "minimum": 0, "maximum": 1},
+        "confidence_thresholds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "required_kinds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["signature", "seal"]}
+        }
+      }
+    },
+    "threshold_sweep": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/metrics"}
+    },
+    "recommended_thresholds": {"$ref": "#/$defs/kindRecommendations"},
+    "calibration_metrics": {"$ref": "#/$defs/kindMetrics"},
+    "validation_metrics": {"$ref": "#/$defs/kindMetrics"},
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputs_unchanged", "verified_file_count"],
+      "properties": {
+        "inputs_unchanged": {"const": true},
+        "verified_file_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "matching", "authenticity_check"],
+      "properties": {
+        "method": {"const": "signature-candidate-calibration-v1"},
+        "matching": {"const": "greedy-iou-one-to-one-v1"},
+        "authenticity_check": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "kindCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signature", "seal"],
+      "properties": {
+        "signature": {"type": "integer", "minimum": 0},
+        "seal": {"type": "integer", "minimum": 0}
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_count", "kind", "confidence_threshold", "true_positives",
+        "false_positives", "false_negatives", "ground_truth_count", "candidate_count",
+        "ignored_candidate_count", "negative_pages", "false_positive_pages", "precision",
+        "recall", "f1", "false_discovery_rate", "miss_rate", "false_positive_page_rate"
+      ],
+      "properties": {
+        "sample_count": {"type": "integer", "minimum": 0},
+        "kind": {"enum": ["signature", "seal"]},
+        "confidence_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "true_positives": {"type": "integer", "minimum": 0},
+        "false_positives": {"type": "integer", "minimum": 0},
+        "false_negatives": {"type": "integer", "minimum": 0},
+        "ground_truth_count": {"type": "integer", "minimum": 0},
+        "candidate_count": {"type": "integer", "minimum": 0},
+        "ignored_candidate_count": {"type": "integer", "minimum": 0},
+        "negative_pages": {"type": "integer", "minimum": 0},
+        "false_positive_pages": {"type": "integer", "minimum": 0},
+        "precision": {"type": "number", "minimum": 0, "maximum": 1},
+        "recall": {"type": "number", "minimum": 0, "maximum": 1},
+        "f1": {"type": "number", "minimum": 0, "maximum": 1},
+        "false_discovery_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "miss_rate": {"type": "number", "minimum": 0, "maximum": 1},
+        "false_positive_page_rate": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confidence_threshold", "minimum_recall_target", "meets_minimum_recall",
+        "selection_metric"
+      ],
+      "properties": {
+        "confidence_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+        "minimum_recall_target": {"type": "number", "minimum": 0, "maximum": 1},
+        "meets_minimum_recall": {"type": "boolean"},
+        "selection_metric": {"const": "max_f1_with_recall_floor"}
+      }
+    },
+    "kindRecommendations": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "signature": {"oneOf": [{"$ref": "#/$defs/recommendation"}, {"type": "null"}]},
+        "seal": {"oneOf": [{"$ref": "#/$defs/recommendation"}, {"type": "null"}]}
+      }
+    },
+    "kindMetrics": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "signature": {"oneOf": [{"$ref": "#/$defs/metrics"}, {"type": "null"}]},
+        "seal": {"oneOf": [{"$ref": "#/$defs/metrics"}, {"type": "null"}]}
+      }
+    }
+  }
+}
