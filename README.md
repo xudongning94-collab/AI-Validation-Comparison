@@ -118,7 +118,7 @@ powershell -ExecutionPolicy Bypass -File scripts\restore_context.ps1 -Verify
 - 阈值扫描分别输出签字/印章的 TP、FP、FN、精确率、召回率、F1、误报占比、漏报率和负样本页误报率
 - 校准报告只保留样本 ID 与 SHA-256，不写源路径、文件名或图像；缺少独立验证集时固定标记 `calibration_only`
 - 入口：`python scripts/calibrate_signature_candidates.py benchmarks/signature/local/manifest.json`
-- 审核包入口：`python scripts/build_signature_review_package.py <manifest.json> --output-dir <local-output>`；导出后使用 `python scripts/audit_signature_review.py <review.json> --output <audit.json> --require-complete` 执行完整性门禁
+- 审核包入口：`python scripts/build_signature_review_package.py <manifest.json> --output-dir <local-output>`；不要通过聊天文件链接直接打开 `index.html`，应运行 `python scripts/serve_signature_review.py <local-output>`，该命令只在 `127.0.0.1` 提供审核页和 manifest 声明的图片，其他本地文件固定返回 404；导出后使用 `python scripts/audit_signature_review.py <review.json> --output <audit.json> --require-complete` 执行完整性门禁
 - 权威分页回退：`python scripts/render_document_pages.py response.docx --canonical-pdf response.pdf --output-dir output/page-render`
 
 ## 快速开始

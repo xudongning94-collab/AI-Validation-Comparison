@@ -108,6 +108,7 @@ powershell -ExecutionPolicy Bypass -File .\bid-compare-agent\scripts\restore_con
 - 第 8 页复核结果明确拆分为：`field_present`（存在“法定代表人签字或签章”字段）和 `handwritten_absent`（字段附近没有手写签名）。本地已生成新的二阶段审核页，先问字段是否存在，再问字段 ROI 中是否已有手写墨迹
 - 新增严格人工审核导出契约与审计：印章必须覆盖预期的全部页码，`missed_seal` 必须携带至少一个框；签字必须先决策 `field_present/field_absent`，再决策 `handwritten_present/handwritten_absent`。候选级标签在全页审核完成前不能成为召回率真值
 - 已生成 Git 忽略的两个本地审核包：秣陵包覆盖 342/342 页，广州包覆盖 7 个签字字段。两者初始审计均为 `incomplete`（分别为 0/342 和 0/7），等待人工审核后导出 JSON
+- 审核页必须通过 `scripts/serve_signature_review.py` 打开；直接点击聊天中的本地 `index.html` 链接会使相对图片资源不可见。服务器只绑定 `127.0.0.1`，且白名单仅包含生成 HTML 与 manifest 声明的图片，不提供目录清单或其他审核 JSON
 
 核心文件：
 
@@ -151,6 +152,7 @@ powershell -ExecutionPolicy Bypass -File .\bid-compare-agent\scripts\restore_con
 - `src/bid_compare_agent/vision/review_audit.py`
 - `scripts/audit_signature_review.py`
 - `scripts/build_signature_review_package.py`
+- `scripts/serve_signature_review.py`
 - `scripts/templates/signature_review.html`
 - `schemas/signature_review_export.schema.json`
 - `schemas/signature_review_audit.schema.json`
@@ -188,6 +190,7 @@ git diff --check
 - `pytest`：`138 passed`
 - 人工审核包：秣陵 342 页和广州 7 字段均成功生成；生成 HTML 的 JavaScript 编译通过，浏览器只读验收确认广州 7 个卡片与二阶段按钮门禁正确
 - 初始完整性审计：秣陵 `seal=0/342`、广州 `signature=0/7`，均按预期返回 `incomplete`，不会提前放行召回率或手写签名真值
+- 白名单审核服务器：秣陵审核页与第一页 PNG 均返回 200；候选汇总 JSON 和 `review-data.json` 均返回 404。浏览器复验 342 个卡片，第一页图片自然尺寸为 1241×1754
 - `git diff --check`：通过；只有 Git 的 LF/CRLF 提示，无空白错误
 - 隔离 worker：原虚拟环境引用的旧 Python 3.12 安装已不存在；使用当前 CPython 3.12.14 执行标准 `venv --upgrade` 重新绑定后，`pip check` 及 OpenCV/NumPy/Paddle/PaddleOCR/PaddleX 真实导入通过
 - 候选子进程：合成页返回 1 个印章候选和 1 个签字候选

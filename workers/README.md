@@ -100,10 +100,12 @@ python scripts\calibrate_signature_candidates.py `
 ```powershell
 python scripts\build_signature_review_package.py review-manifest.json `
   --output-dir benchmarks\signature\local\review-package
+python scripts\serve_signature_review.py `
+  benchmarks\signature\local\review-package
 python scripts\audit_signature_review.py exported-review.json `
   --output benchmarks\signature\local\review-audit.json --require-complete
 ```
 
-印章审核必须覆盖清单中的每一页；签字审核必须先确认代表人签字/签章字段存在，再判断字段内是否已有手写墨迹。审核包与导出结果均保存在 Git 忽略目录，审计报告不包含源路径、图片或 OCR 正文。
+不要通过聊天中的本地文件链接直接打开 `index.html`，否则浏览器可能无法解析相邻图片。`serve_signature_review.py` 只绑定 `127.0.0.1`，且只允许访问审核页与 manifest 声明的图片。印章审核必须覆盖清单中的每一页；签字审核必须先确认代表人签字/签章字段存在，再判断字段内是否已有手写墨迹。审核包与导出结果均保存在 Git 忽略目录，审计报告不包含源路径、图片或 OCR 正文。
 
 校准 CLI 会先要求隔离 worker 具备 `signature_candidates` 能力，未通过健康检查时直接停止，不会退回到主 Python 内执行 OpenCV。

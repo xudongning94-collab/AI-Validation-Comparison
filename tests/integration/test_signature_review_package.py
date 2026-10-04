@@ -16,6 +16,10 @@ def test_review_package_builder_generates_local_ui_without_absolute_paths(
 ) -> None:
     manifest = tmp_path / "manifest.json"
     output = tmp_path / "review"
+    rendered = tmp_path / "rendered"
+    rendered.mkdir()
+    for name in ("page-0001.png", "page-0002.png", "signature-page.png"):
+        (rendered / name).write_bytes(b"not-a-real-image")
     manifest.write_text(
         json.dumps(
             {
@@ -81,3 +85,23 @@ def test_review_package_builder_generates_local_ui_without_absolute_paths(
     assert "no_missed_seal" in html
     assert "handwritten_present" in html
     assert str(tmp_path) not in html
+
+    server_check = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "serve_signature_review.py"),
+            str(output),
+            "--check-only",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+
+    assert server_check.returncode == 0, server_check.stderr
+    assert "url_path=/review/index.html" in server_check.stdout
+    assert "images=3" in server_check.stdout
+    assert str(tmp_path) not in server_check.stdout
