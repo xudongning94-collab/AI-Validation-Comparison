@@ -4,7 +4,7 @@
 
 ## 1. 恢复摘要
 
-- 更新时间：2026-10-03（Asia/Shanghai）
+- 更新时间：2026-10-04（Asia/Shanghai）
 - 恢复来源：`repository_checkpoint`
 - 恢复检查点 ID：`d13.3-recovery-contract-v2`
 - 历史起源线程 ID：`01a0cd3c-1267-7101-9b52-0c63eb4df8c7`（仅用于追溯，不作为恢复入口）
@@ -174,7 +174,7 @@ D13.3 实现、测试、配置、文档和恢复基础设施属于同一检查�
 
 ## 5. 最新验证证据
 
-2026-10-03 在 Python 3.13.15 主环境恢复并复验：
+2026-10-04 在 Python 3.13.15 主环境恢复并复验：
 
 ```powershell
 .\.tools\python313\python.exe -m compileall -q src scripts tests workers
