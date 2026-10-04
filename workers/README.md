@@ -95,4 +95,15 @@ python scripts\calibrate_signature_candidates.py `
 
 校准集用于选择阈值，验证集仅用于独立度量。报告不会包含源路径、文件名、原图或正文；若没有同时覆盖签字和印章真值的 validation 样本，状态保持 `calibration_only`。该流程评估候选存在性与定位效果，不提供签名或印章真伪鉴定。
 
+候选级人工标签只能支持候选精确率分析，不能证明召回率。全页漏章与签字二阶段审核使用本地静态审核包：
+
+```powershell
+python scripts\build_signature_review_package.py review-manifest.json `
+  --output-dir benchmarks\signature\local\review-package
+python scripts\audit_signature_review.py exported-review.json `
+  --output benchmarks\signature\local\review-audit.json --require-complete
+```
+
+印章审核必须覆盖清单中的每一页；签字审核必须先确认代表人签字/签章字段存在，再判断字段内是否已有手写墨迹。审核包与导出结果均保存在 Git 忽略目录，审计报告不包含源路径、图片或 OCR 正文。
+
 校准 CLI 会先要求隔离 worker 具备 `signature_candidates` 能力，未通过健康检查时直接停止，不会退回到主 Python 内执行 OpenCV。

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/signature_review_package_manifest.schema.json",
+  "title": "SignatureReviewPackageManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "document_group_id",
+    "seal_pages",
+    "signature_fields"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "document_group_id": {"type": "string", "minLength": 1},
+    "seal_pages": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/sealPage"}
+    },
+    "signature_fields": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/signatureField"}
+    }
+  },
+  "$defs": {
+    "image": {"type": "string", "minLength": 1},
+    "sealPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page_id", "page_number", "image"],
+      "properties": {
+        "page_id": {"type": "string", "minLength": 1},
+        "page_number": {"type": "integer", "minimum": 1},
+        "image": {"$ref": "#/$defs/image"}
+      }
+    },
+    "signatureField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field_id", "page_number", "image"],
+      "properties": {
+        "field_id": {"type": "string", "minLength": 1},
+        "page_number": {"type": "integer", "minimum": 1},
+        "image": {"$ref": "#/$defs/image"}
+      }
+    }
+  }
+}

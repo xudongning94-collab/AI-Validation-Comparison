@@ -105,6 +105,7 @@ powershell -ExecutionPolicy Bypass -File scripts\restore_context.ps1 -Verify
 - `POST /v1/signature-check` 接收 `file`、`requirements_json` 和可选 `evidence_json`
 - OpenCV worker 识别红/蓝印章候选，并仅在显式 ROI 内寻找签字墨迹候选
 - 签字字段定位器保留 OCR 文本框几何，只接受局部的代表人角色与签字/签章锚点，并结合附近公章、日期提示生成 ROI；字段是否需要签字与 ROI 内是否已有手写墨迹分开判断
+- 本地人工审核契约将印章召回率门禁设为“预期全部页码均已审核”，并将签字审核强制拆为“字段存在”与“字段内手写存在”两阶段；候选级标签不能单独作为召回率真值
 - 当前不能鉴定真实签名或印章真伪；低置信度和质量异常必须人工复核
 - DOCX 原生内容暂按伪页 1 汇总，精确页面坐标仍需页面渲染和 OCR worker
 - D13.3 使用 calibration/validation 分离的本地标注集，按 IoU 一一匹配候选与人工真值；同一源文档及其派生页必须使用同一 `document_group_id`，禁止跨 split 泄漏
@@ -117,6 +118,7 @@ powershell -ExecutionPolicy Bypass -File scripts\restore_context.ps1 -Verify
 - 阈值扫描分别输出签字/印章的 TP、FP、FN、精确率、召回率、F1、误报占比、漏报率和负样本页误报率
 - 校准报告只保留样本 ID 与 SHA-256，不写源路径、文件名或图像；缺少独立验证集时固定标记 `calibration_only`
 - 入口：`python scripts/calibrate_signature_candidates.py benchmarks/signature/local/manifest.json`
+- 审核包入口：`python scripts/build_signature_review_package.py <manifest.json> --output-dir <local-output>`；导出后使用 `python scripts/audit_signature_review.py <review.json> --output <audit.json> --require-complete` 执行完整性门禁
 - 权威分页回退：`python scripts/render_document_pages.py response.docx --canonical-pdf response.pdf --output-dir output/page-render`
 
 ## 快速开始
@@ -244,6 +246,7 @@ benchmarks/              Benchmark manifest 示例；local/ 不入库
 - 页面渲染结果通过 Schema 校验，覆盖 PDF 双页输出、DOCX renderer 缺失和隔离转换路径
 - 页面渲染 Schema v1.1 覆盖 canonical PDF 同源回退、不同源拒绝、双源完整性与路径隐私；真实 WPS DOCX/PDF 组合以 0.76/0.76 双向匹配通过 0.7 门槛并输出 204 个权威页面
 - 新增两组相互独立的真实 PDF 验证素材，共 393 页全部完成只读渲染和印章候选扫描；秣陵组 189 个阈值内候选已人工标为 129 个真印章和 60 个误报，但尚未逐页审计漏检，因此不能据此报告召回率
+- 已生成秣陵 342 页全页漏章审核包和广州 7 字段二阶段签字审核包；初始审计分别为 0/342 和 0/7，只有人工导出通过完整性审计后才可进入真值冻结
 - 旧版秣陵签名页审核的 24 个已标注页面全部无手写。采用几何与局部表单语义重扫后，25 页宽泛关键词候选只保留第 8 页；该页存在必签字段但没有手写签名，验证了字段存在与手写存在必须拆分
 - Windows 标准路径的 LibreOffice 可自动发现；合成两页 DOCX 已真实转换并渲染为 2 张 PNG，未修改源文件
 - 隔离 worker 健康检查、缺失解释器降级、子进程候选检测和校准 CLI 拒绝主进程导入通过契约测试

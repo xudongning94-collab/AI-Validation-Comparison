@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/signature_review_audit.schema.json",
+  "title": "SignatureReviewAudit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "document_group_id",
+    "coverage",
+    "truth_ready",
+    "issues",
+    "privacy"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "status": {"enum": ["ready", "incomplete"]},
+    "document_group_id": {"type": "string", "minLength": 1},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seal", "signature"],
+      "properties": {
+        "seal": {"$ref": "#/$defs/sealCoverage"},
+        "signature": {"$ref": "#/$defs/signatureCoverage"}
+      }
+    },
+    "truth_ready": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seal_recall", "handwritten_signature"],
+      "properties": {
+        "seal_recall": {"type": "boolean"},
+        "handwritten_signature": {"type": "boolean"}
+      }
+    },
+    "issues": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "seal_page_coverage_incomplete",
+          "seal_page_review_incomplete",
+          "signature_field_coverage_incomplete",
+          "signature_field_review_incomplete"
+        ]
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contains_source_paths", "contains_ocr_text"],
+      "properties": {
+        "contains_source_paths": {"const": false},
+        "contains_ocr_text": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "nonNegativeInteger": {"type": "integer", "minimum": 0},
+    "sealCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected",
+        "submitted",
+        "reviewed",
+        "uncertain",
+        "complete",
+        "missed_page_count",
+        "missed_box_count"
+      ],
+      "properties": {
+        "expected": {"$ref": "#/$defs/nonNegativeInteger"},
+        "submitted": {"$ref": "#/$defs/nonNegativeInteger"},
+        "reviewed": {"$ref": "#/$defs/nonNegativeInteger"},
+        "uncertain": {"$ref": "#/$defs/nonNegativeInteger"},
+        "complete": {"type": "boolean"},
+        "missed_page_count": {"$ref": "#/$defs/nonNegativeInteger"},
+        "missed_box_count": {"$ref": "#/$defs/nonNegativeInteger"}
+      }
+    },
+    "signatureCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected",
+        "submitted",
+        "fields_reviewed",
+        "handwriting_reviewed",
+        "uncertain",
+        "complete",
+        "handwritten_present_count"
+      ],
+      "properties": {
+        "expected": {"$ref": "#/$defs/nonNegativeInteger"},
+        "submitted": {"$ref": "#/$defs/nonNegativeInteger"},
+        "fields_reviewed": {"$ref": "#/$defs/nonNegativeInteger"},
+        "handwriting_reviewed": {"$ref": "#/$defs/nonNegativeInteger"},
+        "uncertain": {"$ref": "#/$defs/nonNegativeInteger"},
+        "complete": {"type": "boolean"},
+        "handwritten_present_count": {"$ref": "#/$defs/nonNegativeInteger"}
+      }
+    }
+  }
+}

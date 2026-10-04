@@ -26,8 +26,8 @@
   "phase": {
     "id": "D13.3",
     "status": "in_progress",
-    "completed_scope": "candidate calibration with document-group leakage protection, seal-component clustering, elongated-artifact prefiltering and scale-aware color-artifact confidence suppression, privacy-safe PDF/DOCX rendering, bidirectional same-source canonical-PDF verification and fallback, reproducible Python 3.12 vision-worker bootstrap, verified CV/OCR dependencies, strict all-file offline model integrity, official PP-OCRv5 model staging, real end-to-end PaddleOCR subprocess/client smoke tests on synthetic and local business signing pages, Unicode-safe OpenCV image decoding, one reproducible local single-document seal calibration-only run, a real legacy-DOC pagination diagnostic that preserved 341 reference pages while rejecting a 426-page derived DOCX as native-DOCX validation evidence, an independent native business DOCX preflight and verified 204-page canonical-PDF seal scan, two additional independent PDF validation groups totaling 393 rendered pages with privacy-safe seal-candidate scans, import and analysis of 189 human-reviewed seal candidates with 129 true-seal and 60 false-positive labels, and a geometry-preserving semantic signature-field locator that separates required-field presence from handwritten-ink presence; the legacy 25-page Moling keyword shortlist was reduced to page 8, where a required signature field is present but handwriting is absent",
-    "next_gate": "freeze reviewed seal truth with a full-page missed-seal audit, review independently confirmed handwritten-signature pages using the two-stage field/handwriting workflow, build document-group-separated calibration and validation truth, run independent validation without retuning, and expand canonical-PDF compatibility evidence across additional WPS/Word documents"
+    "completed_scope": "candidate calibration with document-group leakage protection, seal-component clustering, elongated-artifact prefiltering and scale-aware color-artifact confidence suppression, privacy-safe PDF/DOCX rendering, bidirectional same-source canonical-PDF verification and fallback, reproducible Python 3.12 vision-worker bootstrap, verified CV/OCR dependencies, strict all-file offline model integrity, official PP-OCRv5 model staging, real end-to-end PaddleOCR subprocess/client smoke tests on synthetic and local business signing pages, Unicode-safe OpenCV image decoding, one reproducible local single-document seal calibration-only run, a real legacy-DOC pagination diagnostic that preserved 341 reference pages while rejecting a 426-page derived DOCX as native-DOCX validation evidence, an independent native business DOCX preflight and verified 204-page canonical-PDF seal scan, two additional independent PDF validation groups totaling 393 rendered pages with privacy-safe seal-candidate scans, import and analysis of 189 human-reviewed seal candidates with 129 true-seal and 60 false-positive labels, a geometry-preserving semantic signature-field locator that separates required-field presence from handwritten-ink presence, and a privacy-safe human-review contract with a hard full-page seal-coverage gate plus two-stage signature-field/handwriting decisions; local review packages cover all 342 Moling pages and 7 Guangzhou signature fields, and remain deliberately incomplete until human decisions are exported",
+    "next_gate": "complete the local 342-page Moling full-page missed-seal audit and 7-field Guangzhou two-stage signature review, audit the exported decisions, freeze document-group-separated truth, run independent validation without retuning, and expand canonical-PDF compatibility evidence across additional WPS/Word documents"
   },
   "product": {
     "maturity": "alpha",
@@ -37,7 +37,7 @@
   "verification": {
     "last_verified_at": "2026-10-03",
     "python": ".tools/python313/python.exe",
-    "expected_passed_tests": 129,
+    "expected_passed_tests": 138,
     "commands": [
       ".tools/python313/python.exe -m compileall -q src scripts tests workers",
       ".tools/python313/python.exe -m pytest --basetemp .pytest-tmp",
@@ -46,8 +46,9 @@
     ]
   },
   "next_actions": [
-    "complete a full-page missed-seal audit for the Moling group because the 129 true-seal and 60 false-positive labels establish candidate precision evidence but not recall",
-    "review the independent Guangzhou PDF group with the two-stage signature-field and handwritten-ink workflow and freeze confirmed handwritten positives",
+    "open the local Moling review package and complete all 342 full-page missed-seal decisions, drawing a box around every detector-missed seal, then export the review JSON",
+    "open the local Guangzhou review package and complete all 7 two-stage signature-field and handwritten-ink decisions, then export the review JSON",
+    "run scripts/audit_signature_review.py --require-complete on both exported files; do not use candidate labels as recall truth before the seal audit reports ready",
     "convert reviewed seal and handwritten-signature decisions into document-group-separated calibration and validation truth",
     "run calibration and independent validation without retuning on validation results until the report status is validated",
     "expand the canonical-PDF fallback regression set across additional WPS/Word documents",

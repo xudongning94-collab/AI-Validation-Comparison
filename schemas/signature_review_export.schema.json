@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/bid-compare/signature_review_export.schema.json",
+  "title": "SignatureReviewExport",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "document_group_id",
+    "expected_seal_page_count",
+    "expected_signature_field_count",
+    "seal_pages",
+    "signature_fields"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "document_group_id": {"type": "string", "minLength": 1},
+    "expected_seal_page_count": {"type": "integer", "minimum": 0},
+    "expected_signature_field_count": {"type": "integer", "minimum": 0},
+    "seal_pages": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/sealPage"}
+    },
+    "signature_fields": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/signatureField"}
+    }
+  },
+  "$defs": {
+    "bbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "w", "h"],
+      "properties": {
+        "x": {"type": "number", "minimum": 0},
+        "y": {"type": "number", "minimum": 0},
+        "w": {"type": "number", "exclusiveMinimum": 0},
+        "h": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "sealPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page_number", "status", "missed_seal_boxes"],
+      "properties": {
+        "page_number": {"type": "integer", "minimum": 1},
+        "status": {
+          "enum": [
+            "unreviewed",
+            "no_missed_seal",
+            "missed_seal",
+            "uncertain"
+          ]
+        },
+        "missed_seal_boxes": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/bbox"}
+        }
+      }
+    },
+    "signatureField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page_number", "field_status", "handwritten_status"],
+      "properties": {
+        "page_number": {"type": "integer", "minimum": 1},
+        "field_status": {
+          "enum": [
+            "unreviewed",
+            "field_present",
+            "field_absent",
+            "uncertain"
+          ]
+        },
+        "handwritten_status": {
+          "enum": [
+            "unreviewed",
+            "handwritten_present",
+            "handwritten_absent",
+            "not_applicable",
+            "uncertain"
+          ]
+        }
+      }
+    }
+  }
+}

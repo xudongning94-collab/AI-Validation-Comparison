@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>签字与印章真值审核</title>
+  <style>
+    body{font-family:Segoe UI,"Microsoft YaHei",sans-serif;margin:0;background:#f4f6f8;color:#20242a}
+    header{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #d9dee5;padding:14px 20px}
+    h1{font-size:20px;margin:0 0 8px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button,input{font:inherit}button{cursor:pointer}.toolbar button{padding:7px 12px}
+    main{padding:18px}.note{font-size:13px;color:#5c6672}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .card{background:#fff;border:1px solid #dfe4ea;border-radius:10px;padding:10px;box-shadow:0 1px 2px #0001}
+    .image-wrap{position:relative;background:#f8f8f8;user-select:none;touch-action:none}
+    .image-wrap img{display:block;width:100%;height:auto}.box{position:absolute;border:2px solid #e04444;background:#e0444422;pointer-events:none}
+    .meta{font-size:12px;line-height:1.5;margin:8px 0;color:#505965}.question{margin:10px 0 5px;font-weight:600;font-size:13px}
+    .choices{display:flex;gap:5px;flex-wrap:wrap}.choices button{border:1px solid #cfd6df;background:#fff;border-radius:6px;padding:7px 9px}
+    .choices button.active{background:#175cd3;color:#fff;border-color:#175cd3}.danger{color:#a52626}.hidden{display:none!important}
+    .signature-card img{max-height:650px;object-fit:contain}.section-empty{display:none}#status{font-weight:600}
+  </style>
+</head>
+<body>
+<header>
+  <h1>逐页漏章 + 签字字段二阶段审核</h1>
+  <div class="toolbar">
+    <span id="status"></span>
+    <label><input id="unreviewed" type="checkbox"> 仅看未完成</label>
+    <button id="export">导出审核 JSON</button>
+    <button id="clear" class="danger">清空本组选择</button>
+  </div>
+  <div class="note">印章必须逐页确认是否存在候选器漏检；若有漏检，先选“有漏检”再在页面上拖框。签字必须先判断字段是否存在，再判断该字段内是否已有手写墨迹。结果只保存在本机浏览器，导出文件不含图片路径或正文。</div>
+</header>
+<main>
+  <section id="seal-section">
+    <h2>逐页印章漏检审计</h2>
+    <p class="note">“无漏检”表示本页所有真实印章都已被候选器覆盖；不是表示本页没有印章。</p>
+    <div id="seal-grid" class="grid"></div>
+  </section>
+  <section id="signature-section">
+    <h2>签字字段二阶段审核</h2>
+    <div id="signature-grid" class="grid"></div>
+  </section>
+</main>
+<script>
+const DATA=__REVIEW_DATA__;
+const KEY="bid-signature-review-v1:"+DATA.document_group_id;
+let state=JSON.parse(localStorage.getItem(KEY)||"{}");
+
+function emptyState(){
+  const seal={};
+  DATA.seal_pages.forEach(function(page){
+    seal[page.page_id]={page_number:page.page_number,status:"unreviewed",missed_seal_boxes:[]};
+  });
+  const signature={};
+  DATA.signature_fields.forEach(function(field){
+    signature[field.field_id]={page_number:field.page_number,field_status:"unreviewed",handwritten_status:"unreviewed"};
+  });
+  return {seal_pages:seal,signature_fields:signature};
+}
+
+function normalizeState(){
+  const fresh=emptyState();
+  Object.keys(fresh.seal_pages).forEach(function(id){
+    if(state.seal_pages&&state.seal_pages[id]) Object.assign(fresh.seal_pages[id],state.seal_pages[id]);
+  });
+  Object.keys(fresh.signature_fields).forEach(function(id){
+    if(state.signature_fields&&state.signature_fields[id]) Object.assign(fresh.signature_fields[id],state.signature_fields[id]);
+  });
+  state=fresh;
+}
+
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(state));
+  renderStatus();
+  applyFilter();
+}
+
+function esc(value){
+  return String(value).replace(/[&<>"']/g,function(char){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char];
+  });
+}
+
+function buttons(values,current,key,disabled){
+  return '<div class="choices" data-key="'+key+'">'+values.map(function(item){
+    return '<button data-value="'+item[0]+'" class="'+(current===item[0]?"active":"")+'"'+(disabled?' disabled':'')+'>'+item[1]+'</button>';
+  }).join("")+"</div>";
+}
+
+function renderBoxes(card,id){
+  const wrap=card.querySelector(".image-wrap");
+  wrap.querySelectorAll(".box").forEach(function(box){box.remove();});
+  const boxes=state.seal_pages[id].missed_seal_boxes||[];
+  card.querySelector(".box-count").textContent=boxes.length;
+  const img=wrap.querySelector("img");
+  if(!img.naturalWidth||!img.naturalHeight) return;
+  boxes.forEach(function(box){
+    const node=document.createElement("div");
+    node.className="box";
+    node.style.left=(box.x/img.naturalWidth*100)+"%";
+    node.style.top=(box.y/img.naturalHeight*100)+"%";
+    node.style.width=(box.w/img.naturalWidth*100)+"%";
+    node.style.height=(box.h/img.naturalHeight*100)+"%";
+    wrap.appendChild(node);
+  });
+}
+
+function bindBoxDrawing(card,page){
+  const wrap=card.querySelector(".image-wrap");
+  const img=wrap.querySelector("img");
+  let start=null;
+  img.onload=function(){renderBoxes(card,page.page_id);};
+  wrap.addEventListener("pointerdown",function(event){
+    if(state.seal_pages[page.page_id].status!=="missed_seal") return;
+    const rect=wrap.getBoundingClientRect();
+    start={x:event.clientX-rect.left,y:event.clientY-rect.top};
+    wrap.setPointerCapture(event.pointerId);
+  });
+  wrap.addEventListener("pointerup",function(event){
+    if(!start||state.seal_pages[page.page_id].status!=="missed_seal") return;
+    const rect=wrap.getBoundingClientRect();
+    const end={x:event.clientX-rect.left,y:event.clientY-rect.top};
+    const left=Math.max(0,Math.min(start.x,end.x));
+    const top=Math.max(0,Math.min(start.y,end.y));
+    const width=Math.min(rect.width,Math.max(start.x,end.x))-left;
+    const height=Math.min(rect.height,Math.max(start.y,end.y))-top;
+    start=null;
+    if(width<5||height<5) return;
+    state.seal_pages[page.page_id].missed_seal_boxes.push({
+      x:Math.round(left/rect.width*img.naturalWidth*100)/100,
+      y:Math.round(top/rect.height*img.naturalHeight*100)/100,
+      w:Math.round(width/rect.width*img.naturalWidth*100)/100,
+      h:Math.round(height/rect.height*img.naturalHeight*100)/100
+    });
+    save();
+    renderBoxes(card,page.page_id);
+  });
+}
+
+function renderSeal(){
+  const grid=document.getElementById("seal-grid");
+  document.getElementById("seal-section").classList.toggle("section-empty",DATA.seal_pages.length===0);
+  grid.innerHTML=DATA.seal_pages.map(function(page){
+    const current=state.seal_pages[page.page_id];
+    return '<article class="card seal-card" data-id="'+esc(page.page_id)+'">'
+      +'<div class="image-wrap"><img loading="lazy" src="'+esc(page.image)+'"></div>'
+      +'<div class="meta">第 '+page.page_number+' 页 · 已框 <span class="box-count">'+current.missed_seal_boxes.length+'</span> 个漏检印章</div>'
+      +buttons([["no_missed_seal","无漏检"],["missed_seal","有漏检"],["uncertain","不确定"]],current.status,"seal_status")
+      +'<div class="choices"><button data-action="clear-boxes">清除漏检框</button></div></article>';
+  }).join("");
+  DATA.seal_pages.forEach(function(page){
+    const card=grid.querySelector('[data-id="'+CSS.escape(page.page_id)+'"]');
+    bindBoxDrawing(card,page);
+    card.querySelectorAll('[data-key="seal_status"] button').forEach(function(button){
+      button.onclick=function(){
+        const value=button.dataset.value;
+        state.seal_pages[page.page_id].status=value;
+        if(value!=="missed_seal") state.seal_pages[page.page_id].missed_seal_boxes=[];
+        renderAll();
+      };
+    });
+    card.querySelector('[data-action="clear-boxes"]').onclick=function(){
+      state.seal_pages[page.page_id].missed_seal_boxes=[];
+      save();
+      renderBoxes(card,page.page_id);
+    };
+  });
+}
+
+function renderSignature(){
+  const grid=document.getElementById("signature-grid");
+  document.getElementById("signature-section").classList.toggle("section-empty",DATA.signature_fields.length===0);
+  grid.innerHTML=DATA.signature_fields.map(function(field){
+    const current=state.signature_fields[field.field_id];
+    return '<article class="card signature-card" data-id="'+esc(field.field_id)+'">'
+      +'<a href="'+esc(field.image)+'" target="_blank"><img loading="lazy" src="'+esc(field.image)+'" style="width:100%"></a>'
+      +'<div class="meta">'+esc(field.field_id)+' · 第 '+field.page_number+' 页</div>'
+      +'<div class="question">1. 这里是否是要求代表人签字/签章的字段？</div>'
+      +buttons([["field_present","字段存在"],["field_absent","字段不存在"],["uncertain","不确定"]],current.field_status,"field_status")
+      +'<div class="question">2. 该字段内是否已有真实手写墨迹？</div>'
+      +buttons([["handwritten_present","有手写"],["handwritten_absent","无手写"],["uncertain","不确定"]],current.handwritten_status,"handwritten_status",current.field_status!=="field_present")
+      +"</article>";
+  }).join("");
+  DATA.signature_fields.forEach(function(field){
+    const card=grid.querySelector('[data-id="'+CSS.escape(field.field_id)+'"]');
+    card.querySelectorAll(".choices button").forEach(function(button){
+      button.onclick=function(){
+        const key=button.closest(".choices").dataset.key;
+        const value=button.dataset.value;
+        const current=state.signature_fields[field.field_id];
+        if(key==="field_status"){
+          current.field_status=value;
+          if(value==="field_absent") current.handwritten_status="not_applicable";
+          else if(value==="uncertain") current.handwritten_status="uncertain";
+          else if(current.handwritten_status==="not_applicable") current.handwritten_status="unreviewed";
+        }else{
+          if(current.field_status!=="field_present"){
+            alert("请先确认字段存在，再判断手写墨迹。");
+            return;
+          }
+          current.handwritten_status=value;
+        }
+        renderAll();
+      };
+    });
+  });
+}
+
+function sealDone(value){
+  return value.status==="no_missed_seal"||(value.status==="missed_seal"&&value.missed_seal_boxes.length>0);
+}
+
+function signatureDone(value){
+  return (value.field_status==="field_absent"&&value.handwritten_status==="not_applicable")
+    ||(value.field_status==="field_present"&&(value.handwritten_status==="handwritten_present"||value.handwritten_status==="handwritten_absent"));
+}
+
+function renderStatus(){
+  const sealValues=Object.values(state.seal_pages);
+  const signatureValues=Object.values(state.signature_fields);
+  const sealDoneCount=sealValues.filter(sealDone).length;
+  const signatureDoneCount=signatureValues.filter(signatureDone).length;
+  document.getElementById("status").textContent="漏章页 "+sealDoneCount+"/"+sealValues.length+"；签字字段 "+signatureDoneCount+"/"+signatureValues.length;
+}
+
+function applyFilter(){
+  const only=document.getElementById("unreviewed").checked;
+  document.querySelectorAll(".seal-card").forEach(function(card){
+    card.classList.toggle("hidden",only&&sealDone(state.seal_pages[card.dataset.id]));
+  });
+  document.querySelectorAll(".signature-card").forEach(function(card){
+    card.classList.toggle("hidden",only&&signatureDone(state.signature_fields[card.dataset.id]));
+  });
+}
+
+function renderAll(){
+  save();
+  renderSeal();
+  renderSignature();
+  renderStatus();
+  applyFilter();
+}
+
+document.getElementById("unreviewed").onchange=applyFilter;
+document.getElementById("export").onclick=function(){
+  const output={
+    schema_version:"1.0.0",
+    document_group_id:DATA.document_group_id,
+    expected_seal_page_count:DATA.seal_pages.length,
+    expected_signature_field_count:DATA.signature_fields.length,
+    seal_pages:state.seal_pages,
+    signature_fields:state.signature_fields
+  };
+  const blob=new Blob([JSON.stringify(output,null,2)],{type:"application/json"});
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(blob);
+  link.download=DATA.document_group_id+"-review-export.json";
+  link.click();
+  URL.revokeObjectURL(link.href);
+};
+document.getElementById("clear").onclick=function(){
+  if(confirm("确认清空本组全部审核选择？")){
+    state=emptyState();
+    localStorage.removeItem(KEY);
+    renderAll();
+  }
+};
+normalizeState();
+renderAll();
+</script>
+</body>
+</html>

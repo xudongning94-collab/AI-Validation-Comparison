@@ -15,7 +15,7 @@
 - 当前 HEAD：不得写死；恢复时以 `git rev-parse HEAD` 的输出为准
 - 本地标签：`v0.1.0-alpha.12`，解引用到 D13.3 基线提交
 - 机器状态：`D13.3 / in_progress`
-- 当前阶段：D13.3 校准基础设施、页面渲染、canonical PDF 回退、隔离 CV/OCR worker、真实素材候选扫描及首轮人工标注已完成；新增基于 OCR 几何与局部表单语义的签字字段定位器，将“需要签字的字段”与“已出现手写墨迹”拆分判定。秣陵旧版 25 页关键词候选已收敛为第 8 页 1 个真实字段，且该字段没有手写签名；人工真值冻结、漏章全页审计、独立手写正例审核、validation、更多 DOCX/PDF 配对回归与上线验收未完成
+- 当前阶段：D13.3 校准基础设施、页面渲染、canonical PDF 回退、隔离 CV/OCR worker、真实素材候选扫描及首轮人工标注已完成；新增基于 OCR 几何与局部表单语义的签字字段定位器，并完成隐私安全的人工审核契约、完整性审计 CLI 与本地审核页面。秣陵 342 页全页漏章审核包和广州 7 字段二阶段签字审核包已生成，当前均为 0 项人工决策；人工真值冻结、validation、更多 DOCX/PDF 配对回归与上线验收未完成
 - 产品结论：核心功能闭环已达到 Alpha；尚未完成真实数据验证和生产环境发布，不能称为最终开发完成
 - 记录恢复说明：Codex 侧边栏索引与旧线程正文曾出现不一致；旧线程只作为导航记录。任何新窗口都必须以当前 Git 分支、`PROJECT_STATE.json` 和本文件恢复开发状态，不得从线程摘要推断工程进度。
 
@@ -35,7 +35,7 @@ powershell -ExecutionPolicy Bypass -File scripts\restore_context.ps1 -Verify
 powershell -ExecutionPolicy Bypass -File .\bid-compare-agent\scripts\restore_context.ps1 -Verify
 ```
 
-恢复脚本会校验真实 Git 根、分支、版本、基线提交、权威交接是否已经跟踪，以及测试数量。预期测试结果由 `PROJECT_STATE.json` 唯一声明，当前为 `129 passed`。
+恢复脚本会校验真实 Git 根、分支、版本、基线提交、权威交接是否已经跟踪，以及测试数量。预期测试结果由 `PROJECT_STATE.json` 唯一声明，当前为 `138 passed`。
 
 ## 3. 当前已完成范围
 
@@ -106,6 +106,8 @@ powershell -ExecutionPolicy Bypass -File .\bid-compare-agent\scripts\restore_con
 - 已导入秣陵人工审核 JSON：189 个达到阈值的印章候选均已审核，其中 129 个标记为 `true_seal`、60 个标记为 `false_positive`。这些标签可用于候选精确率证据，但因为审核包未要求逐页标记漏检印章，不能据此计算召回率
 - 旧版签名页审核的 24 个已标注页面全部为 `signature_absent`，暴露出“页面出现宽泛关键词”与“局部存在必签字段”被混为一谈的根因。新定位器保留 OCR 文本框几何，只接受同一行/相邻同一行的代表人角色与签字/签章锚点，并要求局部公章或日期表单提示；秣陵全 342 页只保留第 8 页
 - 第 8 页复核结果明确拆分为：`field_present`（存在“法定代表人签字或签章”字段）和 `handwritten_absent`（字段附近没有手写签名）。本地已生成新的二阶段审核页，先问字段是否存在，再问字段 ROI 中是否已有手写墨迹
+- 新增严格人工审核导出契约与审计：印章必须覆盖预期的全部页码，`missed_seal` 必须携带至少一个框；签字必须先决策 `field_present/field_absent`，再决策 `handwritten_present/handwritten_absent`。候选级标签在全页审核完成前不能成为召回率真值
+- 已生成 Git 忽略的两个本地审核包：秣陵包覆盖 342/342 页，广州包覆盖 7 个签字字段。两者初始审计均为 `incomplete`（分别为 0/342 和 0/7），等待人工审核后导出 JSON
 
 核心文件：
 
@@ -146,6 +148,16 @@ powershell -ExecutionPolicy Bypass -File .\bid-compare-agent\scripts\restore_con
 - `schemas/signature_field_locator.schema.json`
 - `tests/unit/test_signature_field_locator.py`
 - `tests/integration/test_signature_field_locator_cli.py`
+- `src/bid_compare_agent/vision/review_audit.py`
+- `scripts/audit_signature_review.py`
+- `scripts/build_signature_review_package.py`
+- `scripts/templates/signature_review.html`
+- `schemas/signature_review_export.schema.json`
+- `schemas/signature_review_audit.schema.json`
+- `schemas/signature_review_package_manifest.schema.json`
+- `tests/unit/test_signature_review_audit.py`
+- `tests/integration/test_signature_review_audit_cli.py`
+- `tests/integration/test_signature_review_package.py`
 
 ## 4. 恢复检查点
 
@@ -173,7 +185,9 @@ git diff --check
 结果：
 
 - `compileall`：退出码 0
-- `pytest`：`129 passed`
+- `pytest`：`138 passed`
+- 人工审核包：秣陵 342 页和广州 7 字段均成功生成；生成 HTML 的 JavaScript 编译通过，浏览器只读验收确认广州 7 个卡片与二阶段按钮门禁正确
+- 初始完整性审计：秣陵 `seal=0/342`、广州 `signature=0/7`，均按预期返回 `incomplete`，不会提前放行召回率或手写签名真值
 - `git diff --check`：通过；只有 Git 的 LF/CRLF 提示，无空白错误
 - 隔离 worker：原虚拟环境引用的旧 Python 3.12 安装已不存在；使用当前 CPython 3.12.14 执行标准 `venv --upgrade` 重新绑定后，`pip check` 及 OpenCV/NumPy/Paddle/PaddleOCR/PaddleX 真实导入通过
 - 候选子进程：合成页返回 1 个印章候选和 1 个签字候选
@@ -213,7 +227,7 @@ git diff --check
 1. PDF、合成 DOCX 和第二个原生业务 DOCX 的逐页渲染已完成；同源权威 PDF 为 204 页，LibreOffice DOCX 渲染为 261 页，分页稳定性验收未通过。canonical PDF 双向校验与权威分页回退契约已实现并通过真实文件；仍需扩充更多 WPS/Word 配对回归。
 2. 隔离 worker、Python 3.12、固定 CV/OCR 依赖、官方模型、合成页冒烟以及本地真实业务签署页 OCR/候选端到端复验已完成；仍需在独立文档组上重复验证。
 3. 目录级离线模型完整性门禁与无隐式下载加载契约已完成；`workers/models/` 为 Git 忽略的本机资产，换机恢复时需重新运行显式暂存脚本。
-4. 已收集并标注首个真实源文档；第二个独立文档组已取得同源权威 PDF 并完成 204 页候选预扫描；另有两组独立 PDF 完成 393 页预扫描。秣陵组已完成 189 个印章候选审核，但仍需全页漏检审计；其签字字段复核没有手写正例。广州组存在视觉确认的手写候选，必须使用新的“字段存在/手写存在”二阶段流程复核并冻结。
+4. 已收集并标注首个真实源文档；第二个独立文档组已取得同源权威 PDF 并完成 204 页候选预扫描；另有两组独立 PDF 完成 393 页预扫描。秣陵 342 页全页漏检审核包和广州 7 字段二阶段审核包已生成并通过页面验收，但尚无人工决策；必须完成审核、导出 JSON 并通过 `--require-complete` 审计后才能冻结真值。
 5. 组件聚类与尺度感知置信度已在单文档 calibration 上保持 0.875 召回并把 FP 从 55 降至 23；第二个独立组已出现国徽、网页配色和界面截图等目标困难负例，应先完成冻结真值，再验证现有阈值，禁止依据 validation 结果继续调参。
 6. 按文档组完成签字/印章 calibration 与独立 validation 标注，禁止同源页面跨 split。
 7. 重新运行校准 CLI，锁定真实阈值并生成独立验证集误报/漏报统计。
