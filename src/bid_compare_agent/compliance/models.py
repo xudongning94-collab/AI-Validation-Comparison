@@ -9,6 +9,7 @@ from bid_compare_agent.models.finding import Finding
 
 ALLOWED_CANDIDATE_KINDS = {"signature", "seal"}
 ALLOWED_QUALITY_FLAGS = {"clipped", "low_opacity", "blurred", "unreadable", "occluded"}
+ALLOWED_SEAL_SCOPES = {"none", "page", "each_page", "cross_page"}
 
 
 @dataclass(frozen=True)
@@ -19,7 +20,8 @@ class SignatureRequirement:
     expected_signer_names: tuple[str, ...] = ()
     signer_role: str | None = None
     require_signature: bool = True
-    require_seal: bool = True
+    require_seal: bool = False
+    seal_scope: str = "none"
     require_date: bool = True
     allowed_pages: tuple[int, ...] = ()
     anchor_terms: tuple[str, ...] = ()
@@ -35,6 +37,12 @@ class SignatureRequirement:
             raise ValueError("title 不能为空")
         if any(page < 1 for page in self.allowed_pages):
             raise ValueError("allowed_pages 必须是正整数")
+        if self.seal_scope not in ALLOWED_SEAL_SCOPES:
+            raise ValueError(f"不支持的盖章范围: {self.seal_scope}")
+        if self.require_seal and self.seal_scope == "none":
+            object.__setattr__(self, "seal_scope", "page")
+        elif not self.require_seal and self.seal_scope != "none":
+            raise ValueError("require_seal=false 时 seal_scope 必须为 none")
         if not 0 <= self.minimum_candidate_confidence <= 1:
             raise ValueError("minimum_candidate_confidence 必须在 0 到 1 之间")
         if not 0 <= self.minimum_text_confidence <= 1:

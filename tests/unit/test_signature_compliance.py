@@ -13,6 +13,7 @@ from bid_compare_agent.compliance import (
     SignatureRequirement,
     VisualCandidate,
     check_signature_compliance,
+    requirements_from_payload,
 )
 
 
@@ -41,8 +42,8 @@ def _requirement(**changes) -> SignatureRequirement:
     values = {
         "rule_id": "sign-cover",
         "title": "投标函签署页",
-        "expected_company_names": ("星河科技有限公司", "星河科技"),
-        "expected_signer_names": ("张三",),
+        "expected_company_names": ("TEST_COMPANY_ALPHA", "TEST_COMPANY"),
+        "expected_signer_names": ("TEST_SIGNER_ALPHA",),
         "signer_role": "法定代表人",
         "require_signature": True,
         "require_seal": True,
@@ -76,9 +77,9 @@ def _validate_schema(payload: dict) -> None:
 def test_complete_signature_page_passes_without_findings() -> None:
     page = PageEvidence(
         page_number=1,
-        native_text="投标人：星河科技有限公司 法定代表人：张三 2026年9月20日",
-        company_names=("星河科技有限公司",),
-        person_names=("张三",),
+        native_text="投标人：TEST_COMPANY_ALPHA 法定代表人：TEST_SIGNER_ALPHA 2026年9月20日",
+        company_names=("TEST_COMPANY_ALPHA",),
+        person_names=("TEST_SIGNER_ALPHA",),
         candidates=(
             _candidate("signature-1", "signature"),
             _candidate("seal-1", "seal"),
@@ -97,17 +98,17 @@ def test_complete_signature_page_passes_without_findings() -> None:
         "failed_rule_count": 0,
         "finding_count": 0,
     }
-    assert result.rules[0].matched_company_name == "星河科技有限公司"
-    assert result.rules[0].matched_signer_name == "张三"
+    assert result.rules[0].matched_company_name == "TEST_COMPANY_ALPHA"
+    assert result.rules[0].matched_signer_name == "TEST_SIGNER_ALPHA"
     assert result.rules[0].matched_date == "2026-09-20"
 
 
 def test_missing_candidates_wrong_company_signer_and_date_are_high_risk() -> None:
     page = PageEvidence(
         page_number=1,
-        native_text="投标人：其他公司 授权代表：李四 2026-10-02",
-        company_names=("其他公司",),
-        person_names=("李四",),
+        native_text="投标人：OTHER_ENTITY_BETA 授权代表：OTHER_SIGNER_BETA 2026-10-02",
+        company_names=("OTHER_ENTITY_BETA",),
+        person_names=("OTHER_SIGNER_BETA",),
         date_values=("2026-10-02",),
         vision_status="ok",
     )
@@ -133,7 +134,7 @@ def test_low_confidence_and_quality_flags_force_review_not_false_success() -> No
         ocr_items=(
             {
                 "evidence_id": "ocr-company",
-                "text": "星河科技有限公司 张三 2026年9月20日",
+                "text": "TEST_COMPANY_ALPHA TEST_SIGNER_ALPHA 2026年9月20日",
                 "confidence": 0.60,
             },
         ),
@@ -193,6 +194,87 @@ def test_unavailable_workers_do_not_masquerade_as_missing_signature_or_seal() ->
     assert "missing_seal" not in codes
 
 
+def test_ordinary_material_rule_does_not_require_a_seal_by_default() -> None:
+    requirement = requirements_from_payload(
+        {
+            "requirements": [
+                {
+                    "rule_id": "ordinary-material",
+                    "title": "普通资料页",
+                    "require_signature": False,
+                    "require_date": False,
+                    "allowed_pages": [1],
+                }
+            ]
+        }
+    )[0]
+    page = PageEvidence(page_number=1, vision_status="ok")
+
+    result = check_signature_compliance("doc-a", [page], [requirement])
+
+    assert requirement.require_seal is False
+    assert requirement.seal_scope == "none"
+    assert result.rules[0].status == "passed"
+    assert not any(
+        finding.evidence["issue_code"] == "missing_seal"
+        for finding in result.findings
+    )
+
+
+def test_explicit_each_page_seal_requirement_checks_every_selected_page() -> None:
+    requirement = _requirement(
+        require_signature=False,
+        require_date=False,
+        expected_company_names=(),
+        expected_signer_names=(),
+        anchor_terms=(),
+        allowed_pages=(1, 2),
+        seal_scope="each_page",
+    )
+    pages = [
+        PageEvidence(
+            page_number=1,
+            candidates=(_candidate("seal-1", "seal"),),
+            vision_status="ok",
+        ),
+        PageEvidence(page_number=2, vision_status="ok"),
+    ]
+
+    result = check_signature_compliance("doc-a", pages, [requirement])
+    missing = [
+        finding
+        for finding in result.findings
+        if finding.evidence["issue_code"] == "missing_seal"
+    ]
+
+    assert len(missing) == 1
+    assert missing[0].source_locator.page == 2
+    assert result.rules[0].status == "failed"
+
+
+def test_cross_page_seal_requirement_is_never_auto_approved() -> None:
+    requirement = _requirement(
+        require_signature=False,
+        require_date=False,
+        expected_company_names=(),
+        expected_signer_names=(),
+        anchor_terms=(),
+        seal_scope="cross_page",
+    )
+    page = PageEvidence(
+        page_number=1,
+        candidates=(_candidate("seal-1", "seal"),),
+        vision_status="ok",
+    )
+
+    result = check_signature_compliance("doc-a", [page], [requirement])
+    codes = {finding.evidence["issue_code"] for finding in result.findings}
+
+    assert "cross_page_seal_manual_review" in codes
+    assert "missing_seal" not in codes
+    assert result.rules[0].status == "review"
+
+
 @pytest.mark.parametrize(
     "changes",
     [
@@ -200,6 +282,7 @@ def test_unavailable_workers_do_not_masquerade_as_missing_signature_or_seal() ->
         {"allowed_pages": (0,)},
         {"minimum_candidate_confidence": 1.1},
         {"date_not_before": date(2026, 10, 1), "date_not_after": date(2026, 9, 1)},
+        {"seal_scope": "unsupported"},
     ],
 )
 def test_invalid_signature_requirements_are_rejected(changes: dict) -> None:

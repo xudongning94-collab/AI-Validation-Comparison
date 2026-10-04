@@ -69,6 +69,22 @@ def requirements_from_payload(payload: Any) -> list[SignatureRequirement]:
     for index, raw in enumerate(raw_rules):
         if not isinstance(raw, dict):
             raise ValueError(f"requirements[{index}] 必须是对象")
+        require_seal = _boolean(
+            raw.get("require_seal"),
+            f"requirements[{index}].require_seal",
+            False,
+        )
+        raw_seal_scope = raw.get("seal_scope")
+        if raw_seal_scope in (None, ""):
+            seal_scope = "page" if require_seal else "none"
+        elif not isinstance(raw_seal_scope, str):
+            raise ValueError(f"requirements[{index}].seal_scope 必须是字符串")
+        else:
+            seal_scope = raw_seal_scope.strip()
+        if require_seal != (seal_scope != "none"):
+            raise ValueError(
+                f"requirements[{index}] 的 require_seal 与 seal_scope 不一致"
+            )
         requirements.append(
             SignatureRequirement(
                 rule_id=str(raw.get("rule_id", "")).strip(),
@@ -91,11 +107,8 @@ def requirements_from_payload(payload: Any) -> list[SignatureRequirement]:
                     f"requirements[{index}].require_signature",
                     True,
                 ),
-                require_seal=_boolean(
-                    raw.get("require_seal"),
-                    f"requirements[{index}].require_seal",
-                    True,
-                ),
+                require_seal=require_seal,
+                seal_scope=seal_scope,
                 require_date=_boolean(
                     raw.get("require_date"),
                     f"requirements[{index}].require_date",

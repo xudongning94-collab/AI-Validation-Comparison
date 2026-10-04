@@ -107,8 +107,9 @@ powershell -ExecutionPolicy Bypass -File .\bid-compare-agent\scripts\restore_con
 - 旧版签名页审核的 24 个已标注页面全部为 `signature_absent`，暴露出“页面出现宽泛关键词”与“局部存在必签字段”被混为一谈的根因。新定位器保留 OCR 文本框几何，只接受同一行/相邻同一行的代表人角色与签字/签章锚点，并要求局部公章或日期表单提示；秣陵全 342 页只保留第 8 页
 - 第 8 页复核结果明确拆分为：`field_present`（存在“法定代表人签字或签章”字段）和 `handwritten_absent`（字段附近没有手写签名）。本地已生成新的二阶段审核页，先问字段是否存在，再问字段 ROI 中是否已有手写墨迹
 - 新增严格人工审核导出契约与审计：印章必须覆盖预期的全部页码，`missed_seal` 必须携带至少一个框；签字必须先决策 `field_present/field_absent`，再决策 `handwritten_present/handwritten_absent`。候选级标签在全页审核完成前不能成为召回率真值
+- 盖章合规与检测器召回率已明确解耦：342 页全页审核只回答“已有印章是否被检测器漏掉”，不表示每页必须盖章。普通资料页默认不要求盖章；签字/签章页、合同或报价页按显式规则要求；逐页和骑缝章仅在招标文件明确要求时启用，骑缝章固定进入人工复核
 - 已生成 Git 忽略的两个本地审核包：秣陵包覆盖 342/342 页，广州包覆盖 7 个签字字段。两者初始审计均为 `incomplete`（分别为 0/342 和 0/7），等待人工审核后导出 JSON
-- 审核页必须通过 `scripts/serve_signature_review.py` 打开；直接点击聊天中的本地 `index.html` 链接会使相对图片资源不可见。服务器只绑定 `127.0.0.1`，且白名单仅包含生成 HTML 与 manifest 声明的图片，不提供目录清单或其他审核 JSON
+- 审核页必须通过 `scripts/serve_signature_review.py` 打开；直接点击聊天中的本地 `index.html` 链接会使相对图片资源不可见。审核包生成器的 `--bundle-images` 会把页面按原分辨率压缩成包内 JPEG，避免受限 Windows 进程能读取 HTML 却不能读取包外原始 PNG。服务器只绑定 `127.0.0.1`，且白名单仅包含生成 HTML 与包清单声明的图片，不提供目录清单或其他审核 JSON
 
 核心文件：
 
@@ -187,10 +188,10 @@ git diff --check
 结果：
 
 - `compileall`：退出码 0
-- `pytest`：`138 passed`
+- `pytest`：`142 passed`
 - 人工审核包：秣陵 342 页和广州 7 字段均成功生成；生成 HTML 的 JavaScript 编译通过，浏览器只读验收确认广州 7 个卡片与二阶段按钮门禁正确
 - 初始完整性审计：秣陵 `seal=0/342`、广州 `signature=0/7`，均按预期返回 `incomplete`，不会提前放行召回率或手写签名真值
-- 白名单审核服务器：秣陵审核页与第一页 PNG 均返回 200；候选汇总 JSON 和 `review-data.json` 均返回 404。浏览器复验 342 个卡片，第一页图片自然尺寸为 1241×1754
+- 白名单审核服务器：秣陵审核页与包内第一页 JPEG 均返回 200；候选汇总 JSON 和 `review-data.json` 均返回 404。应用内浏览器复验 342 个卡片，第一页图片自然尺寸保持 1241×1754；本地包的 HTML 为 40,397 字节，342 张压缩图合计 54,157,544 字节
 - `git diff --check`：通过；只有 Git 的 LF/CRLF 提示，无空白错误
 - 隔离 worker：原虚拟环境引用的旧 Python 3.12 安装已不存在；使用当前 CPython 3.12.14 执行标准 `venv --upgrade` 重新绑定后，`pip check` 及 OpenCV/NumPy/Paddle/PaddleOCR/PaddleX 真实导入通过
 - 候选子进程：合成页返回 1 个印章候选和 1 个签字候选

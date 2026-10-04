@@ -28,12 +28,12 @@
     <button id="export">导出审核 JSON</button>
     <button id="clear" class="danger">清空本组选择</button>
   </div>
-  <div class="note">印章必须逐页确认是否存在候选器漏检；若有漏检，先选“有漏检”再在页面上拖框。签字必须先判断字段是否存在，再判断该字段内是否已有手写墨迹。结果只保存在本机浏览器，导出文件不含图片路径或正文。</div>
+  <div class="note">这里逐页审核的是“页面上实际存在的章有没有被检测器漏掉”，不代表每一页业务上都必须盖章；若有检测器漏章，先选“有漏检”再在页面上拖框。业务合规应另按招标文件和页面类型判断。签字必须先判断字段是否存在，再判断该字段内是否已有手写墨迹。结果只保存在本机浏览器，导出文件不含图片路径或正文。</div>
 </header>
 <main>
   <section id="seal-section">
     <h2>逐页印章漏检审计</h2>
-    <p class="note">“无漏检”表示本页所有真实印章都已被候选器覆盖；不是表示本页没有印章。</p>
+    <p class="note">“无漏检”只表示本页现有真实印章均已被候选器覆盖；既不表示本页没有印章，也不代表该页业务上必须盖章。</p>
     <div id="seal-grid" class="grid"></div>
   </section>
   <section id="signature-section">

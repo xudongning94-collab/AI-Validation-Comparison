@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 import jsonschema
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,7 +20,7 @@ def test_review_package_builder_generates_local_ui_without_absolute_paths(
     rendered = tmp_path / "rendered"
     rendered.mkdir()
     for name in ("page-0001.png", "page-0002.png", "signature-page.png"):
-        (rendered / name).write_bytes(b"not-a-real-image")
+        Image.new("RGB", (12, 16), "white").save(rendered / name)
     manifest.write_text(
         json.dumps(
             {
@@ -56,6 +57,7 @@ def test_review_package_builder_generates_local_ui_without_absolute_paths(
             str(manifest),
             "--output-dir",
             str(output),
+            "--bundle-images",
         ],
         cwd=ROOT,
         capture_output=True,
@@ -84,6 +86,14 @@ def test_review_package_builder_generates_local_ui_without_absolute_paths(
     assert export_template["expected_signature_field_count"] == 1
     assert "no_missed_seal" in html
     assert "handwritten_present" in html
+    assert "不代表该页业务上必须盖章" in html
+    assert "review-assets/image-0001.jpg" in html
+    assert "../rendered/page-0001.png" not in html
+    assert data["seal_pages"][0]["image"] == "review-assets/image-0001.jpg"
+    assert len(list((output / "review-assets").glob("*.jpg"))) == 3
+    assert (output / "review-assets" / "image-0001.jpg").read_bytes().startswith(
+        b"\xff\xd8\xff"
+    )
     assert str(tmp_path) not in html
 
     server_check = subprocess.run(

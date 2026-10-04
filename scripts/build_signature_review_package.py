@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 import jsonschema
+from PIL import Image, ImageOps
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,22 +46,79 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _write_review_jpeg(
+    source_path: Path, target_path: Path, *, quality: int = 82
+) -> None:
+    with Image.open(source_path) as source:
+        source.load()
+        image = ImageOps.exif_transpose(source)
+        if image.mode in {"RGBA", "LA"} or "transparency" in image.info:
+            rgba = image.convert("RGBA")
+            background = Image.new("RGB", rgba.size, "white")
+            background.paste(rgba, mask=rgba.getchannel("A"))
+            image = background
+        elif image.mode != "RGB":
+            image = image.convert("RGB")
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(target_path, format="JPEG", quality=quality, optimize=True)
+
+
+def _bundle_review_images(
+    payload: dict[str, Any], output_dir: Path
+) -> dict[str, Any]:
+    bundled = copy.deepcopy(payload)
+    package_parent = output_dir.resolve().parent
+    cache: dict[Path, str] = {}
+    for collection_name in ("seal_pages", "signature_fields"):
+        for index, item in enumerate(bundled[collection_name]):
+            relative = PurePosixPath(item["image"])
+            resolved = (output_dir / Path(*relative.parts)).resolve()
+            try:
+                resolved.relative_to(package_parent)
+            except ValueError as exc:
+                raise ValueError(
+                    f"{collection_name}[{index}].image must stay inside "
+                    "the output directory parent"
+                ) from exc
+            if not resolved.is_file():
+                raise ValueError(
+                    f"missing image for {collection_name}[{index}].image"
+                )
+            bundled_path = cache.get(resolved)
+            if bundled_path is None:
+                bundled_path = f"review-assets/image-{len(cache) + 1:04d}.jpg"
+                _write_review_jpeg(resolved, output_dir / bundled_path)
+                cache[resolved] = bundled_path
+            item["image"] = bundled_path
+    return bundled
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Build a local full-page seal and two-stage signature review UI."
     )
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--bundle-images",
+        action="store_true",
+        help="write compressed page images inside the review package",
+    )
     args = parser.parse_args()
 
     try:
         payload = _load_manifest(args.manifest)
         template = TEMPLATE.read_text(encoding="utf-8")
+        package_payload = (
+            _bundle_review_images(payload, args.output_dir)
+            if args.bundle_images
+            else payload
+        )
     except (OSError, ValueError, json.JSONDecodeError, jsonschema.ValidationError) as exc:
         print(f"ERROR {exc}")
         return 2
 
-    serialized = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    serialized = json.dumps(package_payload, ensure_ascii=False, separators=(",", ":"))
     serialized = serialized.replace("</", "<\\/")
     html = template.replace("__REVIEW_DATA__", serialized)
     if html == template:
@@ -69,7 +128,7 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "index.html").write_text(html, encoding="utf-8")
     (args.output_dir / "review-data.json").write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(package_payload, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     export_template = {
         "schema_version": "1.0.0",

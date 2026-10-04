@@ -100,12 +100,14 @@ powershell -ExecutionPolicy Bypass -File scripts\restore_context.ps1 -Verify
 ### 签字签章合规检查
 
 - 通过版本化规则核对签字、签章、投标主体、签署人、日期、允许页码与位置锚点
+- 盖章合规采用显式规则：签字/签章页和合同或报价页可配置为必盖；普通资料页未声明 `require_seal` 时默认不强制盖章。只有招标文件明确要求时才使用 `seal_scope=each_page`（逐页）或 `seal_scope=cross_page`（骑缝章）；骑缝章固定进入人工复核，不能由单页候选自动判定通过
 - 原生文本、OCR 文本框和 OpenCV 视觉候选以统一页证据进入确定性规则引擎
 - worker 未运行或失败时明确输出“证据不可用”，不会伪装成“漏签/漏章”
 - `POST /v1/signature-check` 接收 `file`、`requirements_json` 和可选 `evidence_json`
+- 版本化示例中的公司名和签署人数组故意保持为空；真实身份信息只能写入 Git 忽略的本地规则文件，不得提交仓库
 - OpenCV worker 识别红/蓝印章候选，并仅在显式 ROI 内寻找签字墨迹候选
 - 签字字段定位器保留 OCR 文本框几何，只接受局部的代表人角色与签字/签章锚点，并结合附近公章、日期提示生成 ROI；字段是否需要签字与 ROI 内是否已有手写墨迹分开判断
-- 本地人工审核契约将印章召回率门禁设为“预期全部页码均已审核”，并将签字审核强制拆为“字段存在”与“字段内手写存在”两阶段；候选级标签不能单独作为召回率真值
+- 本地人工审核契约将印章检测器召回率门禁设为“预期全部页码均已审核”，这里只判断页面上实际存在的章是否被检测器漏掉，不代表每页业务上都必须盖章；签字审核强制拆为“字段存在”与“字段内手写存在”两阶段，候选级标签不能单独作为召回率真值
 - 当前不能鉴定真实签名或印章真伪；低置信度和质量异常必须人工复核
 - DOCX 原生内容暂按伪页 1 汇总，精确页面坐标仍需页面渲染和 OCR worker
 - D13.3 使用 calibration/validation 分离的本地标注集，按 IoU 一一匹配候选与人工真值；同一源文档及其派生页必须使用同一 `document_group_id`，禁止跨 split 泄漏
@@ -118,7 +120,7 @@ powershell -ExecutionPolicy Bypass -File scripts\restore_context.ps1 -Verify
 - 阈值扫描分别输出签字/印章的 TP、FP、FN、精确率、召回率、F1、误报占比、漏报率和负样本页误报率
 - 校准报告只保留样本 ID 与 SHA-256，不写源路径、文件名或图像；缺少独立验证集时固定标记 `calibration_only`
 - 入口：`python scripts/calibrate_signature_candidates.py benchmarks/signature/local/manifest.json`
-- 审核包入口：`python scripts/build_signature_review_package.py <manifest.json> --output-dir <local-output>`；不要通过聊天文件链接直接打开 `index.html`，应运行 `python scripts/serve_signature_review.py <local-output>`，该命令只在 `127.0.0.1` 提供审核页和 manifest 声明的图片，其他本地文件固定返回 404；导出后使用 `python scripts/audit_signature_review.py <review.json> --output <audit.json> --require-complete` 执行完整性门禁
+- 审核包入口：`python scripts/build_signature_review_package.py <manifest.json> --output-dir <local-output> --bundle-images`；`--bundle-images` 会把原始页面按原分辨率压缩为审核包内 JPEG，避免受限浏览器进程无法读取包外 PNG。不要通过聊天文件链接直接打开 `index.html`，应运行 `python scripts/serve_signature_review.py <local-output>`，该命令只在 `127.0.0.1` 提供审核页和 manifest 声明的图片，其他本地文件固定返回 404；导出后使用 `python scripts/audit_signature_review.py <review.json> --output <audit.json> --require-complete` 执行完整性门禁
 - 权威分页回退：`python scripts/render_document_pages.py response.docx --canonical-pdf response.pdf --output-dir output/page-render`
 
 ## 快速开始

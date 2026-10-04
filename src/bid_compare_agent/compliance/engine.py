@@ -24,6 +24,7 @@ LIMITATIONS = [
     "本检查仅判断签字签章的存在性、一致性、位置和明显质量异常，不能鉴定签名或印章真伪。",
     "OCR 与视觉候选属于辅助证据；低置信度、遮挡、裁切或扫描质量不足时必须人工复核。",
     "规则结果必须结合招标文件原文、授权文件和投标主体信息进行最终确认。",
+    "骑缝章涉及跨页连续性，不能由单页印章候选自动判定，必须人工复核。",
 ]
 
 
@@ -518,14 +519,49 @@ def check_signature_compliance(
             required=requirement.require_signature,
             findings=rule_findings,
         )
-        seal_ids = _append_presence_findings(
-            document_id=document_id,
-            requirement=requirement,
-            pages=relevant_pages,
-            kind="seal",
-            required=requirement.require_seal,
-            findings=rule_findings,
-        )
+        if requirement.require_seal and requirement.seal_scope == "each_page":
+            seal_ids = []
+            for page in relevant_pages:
+                seal_ids.extend(
+                    _append_presence_findings(
+                        document_id=document_id,
+                        requirement=requirement,
+                        pages=[page],
+                        kind="seal",
+                        required=True,
+                        findings=rule_findings,
+                    )
+                )
+        elif requirement.require_seal and requirement.seal_scope == "cross_page":
+            seal_candidates = _candidates(relevant_pages, "seal")
+            seal_ids = [candidate.candidate_id for candidate in seal_candidates]
+            rule_findings.append(
+                _make_finding(
+                    document_id=document_id,
+                    requirement=requirement,
+                    issue_code="cross_page_seal_manual_review",
+                    severity="medium",
+                    summary=(
+                        f"{requirement.title}要求骑缝章；单页印章候选不能确认"
+                        "跨页连续性，必须人工复核。"
+                    ),
+                    page_number=page_number,
+                    score=0.6,
+                    evidence={
+                        "seal_scope": "cross_page",
+                        "candidate_ids": seal_ids[:10],
+                    },
+                )
+            )
+        else:
+            seal_ids = _append_presence_findings(
+                document_id=document_id,
+                requirement=requirement,
+                pages=relevant_pages,
+                kind="seal",
+                required=requirement.require_seal,
+                findings=rule_findings,
+            )
         company_name = _evaluate_identity(
             document_id=document_id,
             requirement=requirement,
